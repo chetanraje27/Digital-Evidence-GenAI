@@ -1,0 +1,149 @@
+{
+  "dataset": "CASIA v2.0 Image Tampering Detection Dataset",
+  "kaggle_handle": "divg07/casia-20-image-tampering-detection-dataset",
+  "dataset_root": "C:\\Users\\Chetanraje\\Desktop\\GAA\\Digital_Evidence\\data\\raw",
+  "total_supported_image_files": 17737,
+  "label_counts": {
+    "authentic": 7491,
+    "tampered": 5123,
+    "unknown": 5123
+  },
+  "extension_counts": {
+    ".bmp": 54,
+    ".jpg": 9501,
+    ".png": 5123,
+    ".tif": 3059
+  },
+  "color_mode_counts": {
+    "RGB": 14197,
+    "L": 2464,
+    "RGBA": 1076
+  },
+  "common_dimensions": {
+    "384x256": 10009,
+    "256x384": 3043,
+    "640x480": 379,
+    "800x600": 361,
+    "600x450": 156,
+    "500x375": 154,
+    "600x402": 152,
+    "561x390": 131,
+    "800x518": 120,
+    "800x521": 89,
+    "550x316": 58,
+    "600x400": 50,
+    "800x572": 49,
+    "540x405": 48,
+    "240x160": 48,
+    "240x180": 45,
+    "800x519": 38,
+    "720x480": 36,
+    "550x314": 36,
+    "550x317": 34
+  },
+  "color_mode_counts_by_label": {
+    "authentic": {
+      "RGB": 7491
+    },
+    "tampered": {
+      "RGB": 5123
+    },
+    "unknown": {
+      "L": 2464,
+      "RGB": 1583,
+      "RGBA": 1076
+    }
+  },
+  "common_dimensions_by_label": {
+    "authentic": {
+      "384x256": 4529,
+      "256x384": 1898,
+      "800x600": 75,
+      "640x480": 43,
+      "500x375": 42,
+      "600x402": 38,
+      "600x450": 34,
+      "800x518": 28,
+      "240x160": 18,
+      "800x521": 17,
+      "600x387": 14,
+      "550x316": 14,
+      "561x390": 13,
+      "600x400": 12,
+      "160x240": 12,
+      "800x572": 11,
+      "540x405": 10,
+      "240x180": 9,
+      "720x480": 8,
+      "550x317": 8
+    },
+    "tampered": {
+      "384x256": 2742,
+      "256x384": 571,
+      "640x480": 168,
+      "800x600": 143,
+      "600x450": 61,
+      "561x390": 59,
+      "600x402": 57,
+      "500x375": 56,
+      "800x518": 46,
+      "800x521": 36,
+      "550x316": 22,
+      "540x405": 19,
+      "800x572": 19,
+      "600x400": 19,
+      "240x180": 18,
+      "240x160": 15,
+      "800x519": 15,
+      "550x314": 14,
+      "720x480": 14,
+      "550x317": 13
+    },
+    "unknown": {
+      "384x256": 2738,
+      "256x384": 574,
+      "640x480": 168,
+      "800x600": 143,
+      "600x450": 61,
+      "561x390": 59,
+      "600x402": 57,
+      "500x375": 56,
+      "800x518": 46,
+      "800x521": 36,
+      "550x316": 22,
+      "540x405": 19,
+      "800x572": 19,
+      "600x400": 19,
+      "240x180": 18,
+      "240x160": 15,
+      "800x519": 15,
+      "550x314": 14,
+      "720x480": 14,
+      "550x317": 13
+    }
+  },
+  "corrupt_or_unreadable_count": 0,
+  "image_counts_by_directory": {
+    "CASIA2\\Au": 7491,
+    "CASIA2\\CASIA 2 Groundtruth": 5123,
+    "CASIA2\\Tp": 5123
+  },
+  "label_inference": {
+    "authentic_path_tokens": [
+      "au",
+      "authentic",
+      "original",
+      "pristine",
+      "real"
+    ],
+    "tampered_path_tokens": [
+      "fake",
+      "forged",
+      "manipulated",
+      "tampered",
+      "tp"
+    ],
+    "note": "Labels are inferred from discovered path component names and retained per image."
+  },
+  "limitations": "Class labels support experimental comparison; they do not make reconstruction error proof of forgery."
+}

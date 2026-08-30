@@ -13,6 +13,10 @@ import random
 from collections import Counter
 from pathlib import Path
 
+import matplotlib
+
+# Use a file-only backend so exploration works in VS Code terminals and CI.
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from PIL import Image, UnidentifiedImageError
 
@@ -81,6 +85,12 @@ def explore(dataset_root: Path, results_dir: Path, outputs_dir: Path, seed: int)
     modes: Counter[str] = Counter()
     labels: Counter[str] = Counter()
     directory_counts: Counter[str] = Counter()
+    dimensions_by_label: dict[str, Counter[str]] = {
+        label: Counter() for label in ("authentic", "tampered", "unknown")
+    }
+    modes_by_label: dict[str, Counter[str]] = {
+        label: Counter() for label in ("authentic", "tampered", "unknown")
+    }
 
     for index, path in enumerate(image_paths, start=1):
         relative_path = path.relative_to(dataset_root)
@@ -92,6 +102,8 @@ def explore(dataset_root: Path, results_dir: Path, outputs_dir: Path, seed: int)
             width, height, mode = inspect_image(path)
             dimensions[f"{width}x{height}"] += 1
             modes[mode] += 1
+            dimensions_by_label[label][f"{width}x{height}"] += 1
+            modes_by_label[label][mode] += 1
         except (OSError, ValueError, UnidentifiedImageError) as exc:
             error = f"{type(exc).__name__}: {exc}"
 
@@ -136,6 +148,12 @@ def explore(dataset_root: Path, results_dir: Path, outputs_dir: Path, seed: int)
         "extension_counts": dict(sorted(extensions.items())),
         "color_mode_counts": dict(modes.most_common()),
         "common_dimensions": dict(dimensions.most_common(20)),
+        "color_mode_counts_by_label": {
+            label: dict(counts.most_common()) for label, counts in modes_by_label.items()
+        },
+        "common_dimensions_by_label": {
+            label: dict(counts.most_common(20)) for label, counts in dimensions_by_label.items()
+        },
         "corrupt_or_unreadable_count": len(corrupt_records),
         "image_counts_by_directory": dict(directory_counts.most_common()),
         "label_inference": {
