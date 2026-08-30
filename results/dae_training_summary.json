@@ -1,0 +1,10 @@
+{
+  "gpu": "Tesla T4",
+  "noise_std": 0.1,
+  "epochs_completed": 8,
+  "best_epoch": 8,
+  "best_validation_loss": 0.004004574217390561,
+  "early_stopping_triggered": false,
+  "training_time_seconds": 440.1751454109999,
+  "checkpoint_path": "/content/Digital-Evidence-GenAI/checkpoints/best_denoising_autoencoder.pth"
+}

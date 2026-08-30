@@ -1,0 +1,23 @@
+{
+  "test_images": 1892,
+  "noise_std": 0.1,
+  "seed": 42,
+  "checkpoint_epoch": 8,
+  "noisy_input": {
+    "mse": 0.00904314282299813,
+    "psnr": 20.448555945008806,
+    "ssim": 0.48794176118412935
+  },
+  "denoised_output": {
+    "mse": 0.003985271450033658,
+    "psnr": 24.6753830004701,
+    "ssim": 0.720648103155369
+  },
+  "improvement": {
+    "mse_reduction_percent": 55.930459929279365,
+    "psnr_improvement_db": 4.226827055461293,
+    "ssim_improvement": 0.23270634197123963
+  },
+  "interpretation_note": "Denoising metrics measure noise removal, not forgery detection.",
+  "evaluation_time_seconds": 28.237240867999844
+}
