@@ -3,33 +3,33 @@
   "number_authentic": 1123,
   "number_tampered": 769,
   "compression_ratio": 24,
-  "checkpoint_epoch": 20,
-  "checkpoint_validation_loss": 0.004161450421205283,
+  "checkpoint_epoch": 42,
+  "checkpoint_validation_loss": 0.00355496878162751,
   "standard_deviation_definition": "population standard deviation (ddof=0)",
   "overall": {
-    "mse_mean": 0.004134354564783003,
-    "mse_std": 0.002407514522519731,
-    "psnr_mean": 24.560325775673725,
-    "psnr_std": 2.6192266728647504,
-    "ssim_mean": 0.7253569589482806,
-    "ssim_std": 0.08086171455989229
+    "mse_mean": 0.0035324155782691146,
+    "mse_std": 0.0021533566353177194,
+    "psnr_mean": 25.307679633129705,
+    "psnr_std": 2.742185939497119,
+    "ssim_mean": 0.761557853451869,
+    "ssim_std": 0.07774363060804172
   },
   "authentic": {
-    "mse_mean": 0.0040043162715120385,
-    "mse_std": 0.0022931975223277885,
-    "psnr_mean": 24.69198032156102,
-    "psnr_std": 2.613219372374581,
-    "ssim_mean": 0.7300837713219922,
-    "ssim_std": 0.08134532856831744
+    "mse_mean": 0.003421725183677671,
+    "mse_std": 0.002045957938241989,
+    "psnr_mean": 25.44303344055126,
+    "psnr_std": 2.751611904553484,
+    "ssim_mean": 0.766051884777081,
+    "ssim_std": 0.07781307658197809
   },
   "tampered": {
-    "mse_mean": 0.004324254439091576,
-    "mse_std": 0.00255345133925614,
-    "psnr_mean": 24.368065626087994,
-    "psnr_std": 2.6160992148717446,
-    "ssim_mean": 0.7184542147406366,
-    "ssim_std": 0.07964787461770033
+    "mse_mean": 0.003694060978953368,
+    "mse_std": 0.002291623177648897,
+    "psnr_mean": 25.11001731097833,
+    "psnr_std": 2.716272506769503,
+    "ssim_mean": 0.75499504827864,
+    "ssim_std": 0.07717339253163609
   },
   "interpretation_note": "Authentic/tampered results are exploratory reconstruction comparisons only; the Autoencoder and reconstruction error are not proof of forgery.",
-  "evaluation_time_seconds": 36.26417570002377
+  "evaluation_time_seconds": 43.3608193
 }
