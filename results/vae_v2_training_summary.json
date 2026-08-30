@@ -1,0 +1,13 @@
+{
+  "device": "Tesla T4",
+  "epochs_completed": 48,
+  "best_epoch": 43,
+  "best_validation_total_loss": 0.04100875587972476,
+  "early_stopping_triggered": true,
+  "training_time_seconds": 1363.9269068180001,
+  "checkpoint_path": "/content/Digital-Evidence-GenAI/checkpoints/best_vae_v2.pth",
+  "history_path": "/content/Digital-Evidence-GenAI/results/vae_v2_training_history.csv",
+  "target_beta": 0.001,
+  "warmup_epochs": 10,
+  "smoke_test": false
+}
