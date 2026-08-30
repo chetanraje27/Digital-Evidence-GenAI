@@ -1,0 +1,11 @@
+{
+  "real_images": 1892,
+  "generated_images": 1892,
+  "fid": 169.8785858154297,
+  "fid_features": 2048,
+  "inception_score_mean": 2.94950795173645,
+  "inception_score_std": 0.1316271722316742,
+  "inception_score_splits": 10,
+  "evaluation_time_seconds": 33.143684982000195,
+  "warning": null
+}

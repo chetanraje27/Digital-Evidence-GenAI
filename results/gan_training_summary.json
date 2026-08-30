@@ -1,0 +1,10 @@
+{
+  "gpu": "Tesla T4",
+  "epochs_completed": 30,
+  "final_generator_loss": 3.3741403796376974,
+  "final_discriminator_loss": 0.2747926720193703,
+  "training_time_seconds": 677.678556219,
+  "generator_checkpoint": "/content/Digital-Evidence-GenAI/checkpoints/best_generator.pth",
+  "discriminator_checkpoint": "/content/Digital-Evidence-GenAI/checkpoints/best_discriminator.pth",
+  "smoke_test": false
+}
