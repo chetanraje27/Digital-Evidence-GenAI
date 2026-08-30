@@ -1,0 +1,28 @@
+{
+  "device": "cpu",
+  "latent_dim": 100,
+  "noise_shape": [
+    32,
+    100,
+    1,
+    1
+  ],
+  "generated_shape": [
+    32,
+    3,
+    64,
+    64
+  ],
+  "generated_min": -0.01592588983476162,
+  "generated_max": 0.015267902985215187,
+  "discriminator_output_shape": [
+    32,
+    1,
+    1,
+    1
+  ],
+  "discriminator_output_type": "logits",
+  "generator_parameters": 3576704,
+  "discriminator_parameters": 2765568,
+  "nan_status": false
+}
