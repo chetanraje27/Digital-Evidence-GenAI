@@ -1,0 +1,41 @@
+{
+  "input_shape": [
+    32,
+    3,
+    128,
+    128
+  ],
+  "encoded_feature_shape": [
+    32,
+    128,
+    8,
+    8
+  ],
+  "mu_shape": [
+    32,
+    128
+  ],
+  "logvar_shape": [
+    32,
+    128
+  ],
+  "latent_shape": [
+    32,
+    128
+  ],
+  "output_shape": [
+    32,
+    3,
+    128,
+    128
+  ],
+  "latent_dim": 128,
+  "total_parameters": 4009795,
+  "trainable_parameters": 4009795,
+  "initial_reconstruction_loss": 0.0891205370426178,
+  "initial_kl_loss": 0.014359846711158752,
+  "output_min": 0.48449084162712097,
+  "output_max": 0.5417674779891968,
+  "nan_present": false,
+  "device": "cpu"
+}
