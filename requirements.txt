@@ -1,0 +1,11 @@
+torch>=2.5
+torchvision>=0.20
+numpy>=2.0
+pandas>=2.2
+matplotlib>=3.9
+Pillow>=11.0
+scikit-image>=0.24
+scikit-learn>=1.5
+kagglehub>=1.0
+jupyter>=1.1
+tqdm>=4.66
