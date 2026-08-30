@@ -1,0 +1,30 @@
+{
+  "input_shape": [
+    32,
+    3,
+    128,
+    128
+  ],
+  "latent_shape": [
+    32,
+    32,
+    8,
+    8
+  ],
+  "output_shape": [
+    32,
+    3,
+    128,
+    128
+  ],
+  "input_values_per_image": 49152,
+  "latent_values_per_image": 2048,
+  "compression_ratio": 24.0,
+  "total_parameters": 265571,
+  "trainable_parameters": 265571,
+  "initial_untrained_mse": 0.08755343407392502,
+  "reconstruction_output_min": 0.4896462559700012,
+  "reconstruction_output_max": 0.5197080969810486,
+  "nan_present": false,
+  "device": "cpu"
+}

@@ -1,0 +1,2 @@
+epoch,train_loss,validation_loss,learning_rate
+1,0.027756140679374153,0.013971103335598811,0.001

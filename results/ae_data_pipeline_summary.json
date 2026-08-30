@@ -1,0 +1,58 @@
+{
+  "seed": 42,
+  "split_percentages": {
+    "train": 70,
+    "validation": 15,
+    "test": 15
+  },
+  "total_images": 12614,
+  "split_counts": {
+    "train": 8830,
+    "validation": 1892,
+    "test": 1892
+  },
+  "class_counts": {
+    "train": {
+      "authentic": 5244,
+      "tampered": 3586
+    },
+    "validation": {
+      "authentic": 1124,
+      "tampered": 768
+    },
+    "test": {
+      "authentic": 1123,
+      "tampered": 769
+    }
+  },
+  "class_ratios": {
+    "train": {
+      "authentic": 0.593884,
+      "tampered": 0.406116
+    },
+    "validation": {
+      "authentic": 0.59408,
+      "tampered": 0.40592
+    },
+    "test": {
+      "authentic": 0.593552,
+      "tampered": 0.406448
+    }
+  },
+  "batch_shape": [
+    32,
+    3,
+    128,
+    128
+  ],
+  "pixel_min": 0.0,
+  "pixel_max": 1.0,
+  "duplicate_count_across_splits": 0,
+  "ground_truth_mask_count_accidentally_included": 0,
+  "image_size": 128,
+  "batch_size": 32,
+  "num_workers": 0,
+  "training_shuffle": true,
+  "validation_shuffle": false,
+  "test_shuffle": false
+}
