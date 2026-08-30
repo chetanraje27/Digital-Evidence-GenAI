@@ -19,6 +19,10 @@ data/raw/
 data/processed/
 
 # Model checkpoints
+checkpoints/
+*.pth
+*.pt
+*.ckpt
 
 # Generated outputs
 outputs/
