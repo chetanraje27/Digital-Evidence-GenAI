@@ -44,7 +44,10 @@ div[data-testid="stMetric"]{border:1px solid var(--line);border-radius:14px;padd
 
 @st.cache_resource(show_spinner="Loading Autoencoder…")
 def load_ae():
-    return AutoencoderInference(ROOT / "checkpoints" / "best_autoencoder.pth", DEVICE)
+    # Same architecture, using the improved epoch-76 checkpoint from the RTX-80 run.
+    return AutoencoderInference(
+        ROOT / "checkpoints" / "best_autoencoder.pth", DEVICE
+    )
 
 
 @st.cache_resource(show_spinner="Loading VAE V5 Final…")
@@ -148,7 +151,7 @@ if page == "Project Overview":
 
 
 elif page == "Autoencoder":
-    heading("Model 01 · deterministic reconstruction", "Convolutional Autoencoder", "Examine reconstruction fidelity after a meaningful 24× dimensional bottleneck. Metrics compare input and reconstruction; the model does not predict a label.")
+    heading("Model 01 · deterministic reconstruction", "Convolutional Autoencoder — RTX-80 Final", "Examine reconstruction fidelity from the improved 80-epoch training run after a meaningful 24× dimensional bottleneck. Metrics compare input and reconstruction; the model does not predict a label.")
     info = st.columns(4)
     for column, label, value in zip(info, ["Input", "Latent", "Compression", "Parameters"], ["3×128×128", "32×8×8", "24×", "265,571"]):
         column.metric(label, value)
@@ -170,6 +173,8 @@ elif page == "Autoencoder":
     with st.expander("Architecture and interpretation"):
         st.write("Encoder downsamples the image; the bottleneck holds 2,048 values; the decoder restores 49,152 RGB values with Sigmoid output.")
         st.write("Lower MSE is better; higher PSNR is better; SSIM closer to 1 indicates stronger structural similarity.")
+        st.write("Current checkpoint: best epoch 76 · validation MSE 0.00305005.")
+        st.write("Complete held-out test: MSE 0.00303199 · PSNR 26.0159 dB · SSIM 0.792911.")
 
 
 elif page == "VAE V5 Final":
@@ -254,7 +259,7 @@ elif page == "Transformer V2":
 else:
     heading("Evidence-based comparison", "Model roles and measured outcomes", "Each architecture has a distinct objective. Reconstruction metrics compare output with input; they do not establish a single overall ranking or forensic validity.")
     comparison = pd.DataFrame([
-        {"Model":"Autoencoder","Primary role":"Deterministic reconstruction + compression","MSE ↓":"0.00353242","PSNR ↑":"25.3077","SSIM ↑":"0.761558","ROC-AUC":"N/A"},
+        {"Model":"Autoencoder RTX-80 Final","Primary role":"Deterministic reconstruction + compression","MSE ↓":"0.00303199","PSNR ↑":"26.0159","SSIM ↑":"0.792911","ROC-AUC":"N/A"},
         {"Model":"VAE V5 Final","Primary role":"Probabilistic representation + reconstruction","MSE ↓":"0.00070007","PSNR ↑":"32.9535","SSIM ↑":"0.961139","ROC-AUC":"0.5154"},
         {"Model":"Transformer V2","Primary role":"Patch-attention reconstruction","MSE ↓":"0.00206004*","PSNR ↑":"N/A","SSIM ↑":"N/A","ROC-AUC":"0.5455"},
     ])

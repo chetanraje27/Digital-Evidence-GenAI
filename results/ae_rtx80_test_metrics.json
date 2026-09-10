@@ -1,0 +1,35 @@
+{
+  "number_of_test_images": 1892,
+  "number_authentic": 1123,
+  "number_tampered": 769,
+  "compression_ratio": 24,
+  "checkpoint_epoch": 76,
+  "checkpoint_validation_loss": 0.003050047796944168,
+  "standard_deviation_definition": "population standard deviation (ddof=0)",
+  "overall": {
+    "mse_mean": 0.0030319858478006527,
+    "mse_std": 0.0019106919634586553,
+    "psnr_mean": 26.015853145688187,
+    "psnr_std": 2.825150205913724,
+    "ssim_mean": 0.7929105853335046,
+    "ssim_std": 0.0725071888487523
+  },
+  "authentic": {
+    "mse_mean": 0.002935545700472134,
+    "mse_std": 0.0018149859224491159,
+    "psnr_mean": 26.157154514722194,
+    "psnr_std": 2.8451481883399725,
+    "ssim_mean": 0.7970743042649908,
+    "ssim_std": 0.07226533764989447
+  },
+  "tampered": {
+    "mse_mean": 0.003172821069452052,
+    "mse_std": 0.002034217203843655,
+    "psnr_mean": 25.80950537270354,
+    "psnr_std": 2.7828299823260103,
+    "ssim_mean": 0.786830147934208,
+    "ssim_std": 0.07243020708815932
+  },
+  "interpretation_note": "Authentic/tampered results are exploratory reconstruction comparisons only; the Autoencoder and reconstruction error are not proof of forgery.",
+  "evaluation_time_seconds": 303.8882567999972
+}
