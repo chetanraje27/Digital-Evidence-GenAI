@@ -53,18 +53,33 @@ import kagglehub
 
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
+downloaded = None
 if not (RAW_DIR / "CASIA2" / "Au").is_dir():
     downloaded = Path(kagglehub.dataset_download(
         "divg07/casia-20-image-tampering-detection-dataset", output_dir=str(RAW_DIR)
-    ))
+    )).resolve()
     print("Downloaded to:", downloaded)
 
-# Locate CASIA2 if KaggleHub added an extra directory level, then expose the
-# repository-relative location required by the portable CSV manifests.
+# KaggleHub may ignore output_dir when it reuses Colab's mounted cache and
+# return /kaggle/input/... instead. Search the returned path, not only RAW_DIR.
 if not (RAW_DIR / "CASIA2").is_dir():
-    candidates = [p for p in RAW_DIR.rglob("CASIA2") if (p / "Au").is_dir() and (p / "Tp").is_dir()]
-    assert candidates, "CASIA2/Au and CASIA2/Tp were not found after download."
-    os.symlink(candidates[0], RAW_DIR / "CASIA2", target_is_directory=True)
+    search_roots = [p for p in (downloaded, RAW_DIR) if p is not None and p.exists()]
+    candidates = []
+    for root in search_roots:
+        # Handle both a returned CASIA2 directory and a parent containing it.
+        if root.name.casefold() == "casia2" and (root / "Au").is_dir() and (root / "Tp").is_dir():
+            candidates.append(root)
+        candidates.extend(
+            p for p in root.rglob("CASIA2")
+            if (p / "Au").is_dir() and (p / "Tp").is_dir()
+        )
+    assert candidates, (
+        f"CASIA2/Au and CASIA2/Tp were not found under: {search_roots}. "
+        "Inspect the printed Kaggle dataset location."
+    )
+    source_casia2 = candidates[0].resolve()
+    os.symlink(source_casia2, RAW_DIR / "CASIA2", target_is_directory=True)
+    print("Linked:", RAW_DIR / "CASIA2", "->", source_casia2)
 
 SPLITS_DIR = PROJECT_ROOT / "data" / "splits"
 rows_by_split = {}
