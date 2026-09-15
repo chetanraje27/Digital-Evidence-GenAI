@@ -21,9 +21,22 @@ import matplotlib.pyplot as plt
 from ae_dataset import create_ae_dataloaders
 from autoencoder import ConvolutionalAutoencoder
 from checkpoint_utils import validate_checkpoint_file
+from quality_autoencoder import ARCHITECTURE_NAME as QUALITY_ARCHITECTURE_NAME
+from quality_autoencoder import QualityAutoencoder
 
 
 EXPECTED_TEST_COUNTS = {"authentic": 1123, "tampered": 769}
+
+
+def build_model(checkpoint: dict[str, object]) -> tuple[torch.nn.Module, str, int]:
+    """Build the architecture declared by a checkpoint, defaulting to legacy AE."""
+    architecture = str(checkpoint.get("architecture", "standard_convolutional_ae"))
+    if architecture == QUALITY_ARCHITECTURE_NAME:
+        model = QualityAutoencoder()
+        return model, architecture, model.compression_ratio
+    if architecture == "standard_convolutional_ae":
+        return ConvolutionalAutoencoder(), architecture, 24
+    raise ValueError(f"Unsupported Autoencoder architecture in checkpoint: {architecture}")
 
 
 def summarize(rows: list[dict[str, object]]) -> dict[str, float]:
@@ -45,7 +58,8 @@ def relative_image_path(path: str, project_root: Path) -> str:
 
 
 def save_reconstruction_grid(
-    samples: dict[str, list[tuple[torch.Tensor, torch.Tensor]]], output_path: Path
+    samples: dict[str, list[tuple[torch.Tensor, torch.Tensor]]], output_path: Path,
+    model_label: str = "Autoencoder",
 ) -> None:
     pairs = [
         (class_name, original, reconstruction)
@@ -60,7 +74,7 @@ def save_reconstruction_grid(
         axes[row_index][1].set_title(f"{class_name.title()} — Reconstructed")
         axes[row_index][0].axis("off")
         axes[row_index][1].axis("off")
-    figure.suptitle("Standard Autoencoder — Held-out Test Reconstructions")
+    figure.suptitle(f"{model_label} — Held-out Test Reconstructions")
     figure.tight_layout()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output_path, dpi=150, bbox_inches="tight")
@@ -98,10 +112,11 @@ def evaluate(args: argparse.Namespace) -> dict[str, object]:
         num_workers=args.num_workers,
         seed=args.seed,
     )["test"]
-    model = ConvolutionalAutoencoder().to(device)
     checkpoint_path = validate_checkpoint_file(args.checkpoint_path, "Autoencoder")
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=True)
-    model.load_state_dict(checkpoint["model_state_dict"])
+    model, architecture, compression_ratio = build_model(checkpoint)
+    model = model.to(device)
+    model.load_state_dict(checkpoint["model_state_dict"], strict=True)
     model.eval()
 
     rows: list[dict[str, object]] = []
@@ -163,7 +178,8 @@ def evaluate(args: argparse.Namespace) -> dict[str, object]:
         "number_of_test_images": len(rows),
         "number_authentic": len(authentic_rows),
         "number_tampered": len(tampered_rows),
-        "compression_ratio": 24,
+        "architecture": architecture,
+        "compression_ratio": compression_ratio,
         "checkpoint_epoch": int(checkpoint["epoch"]),
         "checkpoint_validation_loss": float(checkpoint["validation_loss"]),
         "standard_deviation_definition": "population standard deviation (ddof=0)",
@@ -177,7 +193,8 @@ def evaluate(args: argparse.Namespace) -> dict[str, object]:
     }
     args.metrics_json.parent.mkdir(parents=True, exist_ok=True)
     args.metrics_json.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
-    save_reconstruction_grid(samples, args.reconstruction_grid)
+    model_label = "Quality Autoencoder" if architecture == QUALITY_ARCHITECTURE_NAME else "Standard Autoencoder"
+    save_reconstruction_grid(samples, args.reconstruction_grid, model_label)
     save_distribution_plot(rows, "mse", args.mse_plot)
     save_distribution_plot(rows, "ssim", args.ssim_plot)
     metrics["evaluation_time_seconds"] = time.perf_counter() - start_time

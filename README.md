@@ -67,6 +67,16 @@ The GUI labels outputs as `Original Image` and `Reconstructed Image` and does no
 
 ![AE canonical reconstruction examples](docs/results/ae_reconstruction_examples.png)
 
+#### Quality Autoencoder candidate (not yet an active result)
+
+`notebooks/AE/04_quality_autoencoder_training_colab.ipynb` trains a separate
+quality-focused candidate from scratch. It uses residual blocks, resize-convolution
+upsampling, a `32 x 16 x 16` latent tensor (6x compression), and a weighted
+L1/SSIM/edge objective. It has no encoder-to-decoder skip connections. Checkpoint
+selection uses validation SSIM; the canonical test split is evaluated only after
+training. Do not replace the active RTX-80 checkpoint or claim an improvement until
+the generated metrics and reconstruction grids have been reviewed.
+
 ### VAE V5 Final
 
 - Input: `3 × 128 × 128`
