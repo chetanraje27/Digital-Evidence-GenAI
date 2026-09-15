@@ -1,0 +1,4 @@
+model,primary_role,test_images,mse,psnr_db,ssim,parameters,checkpoint_epoch,evaluation_seconds,source_result
+Autoencoder RTX-80 Final,Deterministic reconstruction and compression,1892,0.0030319858478006527,26.015853145688187,0.7929105853335046,265571,76,303.8882567999972,results/ae_rtx80_test_metrics.json
+VAE V5 Final,Probabilistic latent representation and reconstruction,1892,0.0007000720501498279,32.95345649305912,0.9611388501921869,17599971,79,84.74977929999977,results/vae_v5_final_test_metrics.json
+Vision Transformer V2,Patch-token self-attention reconstruction,1892,0.002207326311833138,27.265186171767947,0.8448639925388151,3591168,50,50.861607800005004,results/transformer_v2_test_metrics.json

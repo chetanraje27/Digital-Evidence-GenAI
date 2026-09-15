@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 
 from ae_dataset import create_ae_dataloaders
 from autoencoder import ConvolutionalAutoencoder
+from checkpoint_utils import validate_checkpoint_file
 
 
 EXPECTED_TEST_COUNTS = {"authentic": 1123, "tampered": 769}
@@ -98,7 +99,8 @@ def evaluate(args: argparse.Namespace) -> dict[str, object]:
         seed=args.seed,
     )["test"]
     model = ConvolutionalAutoencoder().to(device)
-    checkpoint = torch.load(args.checkpoint_path, map_location=device, weights_only=True)
+    checkpoint_path = validate_checkpoint_file(args.checkpoint_path, "Autoencoder")
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=True)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
 
@@ -187,19 +189,33 @@ def evaluate(args: argparse.Namespace) -> dict[str, object]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--splits-dir", type=Path, default=Path("data/splits"))
-    parser.add_argument("--checkpoint-path", type=Path, default=Path("checkpoints/best_autoencoder.pth"))
     parser.add_argument(
-        "--per-image-csv", type=Path, default=Path("results/ae_test_per_image_metrics.csv")
-    )
-    parser.add_argument("--metrics-json", type=Path, default=Path("results/ae_test_metrics.json"))
-    parser.add_argument(
-        "--reconstruction-grid", type=Path, default=Path("outputs/ae/test_reconstruction_grid.png")
+        "--checkpoint-path",
+        type=Path,
+        default=Path("checkpoints/best_autoencoder_rtx80_portable.pth"),
     )
     parser.add_argument(
-        "--mse-plot", type=Path, default=Path("outputs/ae/authentic_vs_tampered_mse.png")
+        "--per-image-csv",
+        type=Path,
+        default=Path("results/ae_rtx80_test_per_image_metrics.csv"),
     )
     parser.add_argument(
-        "--ssim-plot", type=Path, default=Path("outputs/ae/authentic_vs_tampered_ssim.png")
+        "--metrics-json", type=Path, default=Path("results/ae_rtx80_test_metrics.json")
+    )
+    parser.add_argument(
+        "--reconstruction-grid",
+        type=Path,
+        default=Path("outputs/ae_rtx80/test_reconstruction_grid.png"),
+    )
+    parser.add_argument(
+        "--mse-plot",
+        type=Path,
+        default=Path("outputs/ae_rtx80/authentic_vs_tampered_mse.png"),
+    )
+    parser.add_argument(
+        "--ssim-plot",
+        type=Path,
+        default=Path("outputs/ae_rtx80/authentic_vs_tampered_ssim.png"),
     )
     parser.add_argument("--image-size", type=int, default=128)
     parser.add_argument("--batch-size", type=int, default=32)

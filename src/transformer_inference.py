@@ -9,14 +9,13 @@ import torch
 from PIL import Image
 
 from ae_inference import image_metrics, preprocess_image
+from checkpoint_utils import validate_checkpoint_file
 from transformer import TransformerForensicAutoencoder
 
 
 class TransformerInference:
     def __init__(self, checkpoint_path: str | Path, device: torch.device) -> None:
-        path = Path(checkpoint_path)
-        if not path.is_file():
-            raise FileNotFoundError(f"Transformer V2 checkpoint not found: {path}")
+        path = validate_checkpoint_file(checkpoint_path, "Vision Transformer V2")
         checkpoint = torch.load(path, map_location=device, weights_only=True)
         required = ("image_size", "patch_size", "embed_dim", "num_heads", "encoder_layers", "decoder_layers", "ff_dim")
         missing = [key for key in required if key not in checkpoint]

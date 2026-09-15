@@ -20,6 +20,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from ae_dataset import create_ae_dataloaders
+from checkpoint_utils import validate_checkpoint_file
 from vae import DEFAULT_BETA_END, DEFAULT_LATENT_DIM, VAEV5
 
 
@@ -165,7 +166,8 @@ def evaluate(args: argparse.Namespace) -> dict[str, object]:
     loaders = create_ae_dataloaders(
         args.splits_dir, args.image_size, args.batch_size, args.num_workers, args.seed
     )
-    checkpoint = torch.load(args.checkpoint_path, map_location=device, weights_only=True)
+    checkpoint_path = validate_checkpoint_file(args.checkpoint_path, "VAE V5")
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=True)
     latent_dim = int(checkpoint.get("latent_dim", args.latent_dim))
     beta = float(checkpoint.get("beta", args.beta))
     l1_weight = float(checkpoint.get("l1_weight", args.l1_weight))

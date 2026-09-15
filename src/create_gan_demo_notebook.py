@@ -125,5 +125,6 @@ notebook = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
     "language_info": {"name": "python"},
 })
-nbf.write(notebook, ROOT / "notebooks" / "GAN_CASIA_Complete_Demo.ipynb")
-print("Created GAN_CASIA_Complete_Demo.ipynb")
+if __name__ == "__main__":
+    nbf.write(notebook, ROOT / "notebooks" / "GAN_CASIA_Complete_Demo.ipynb")
+    print("Created GAN_CASIA_Complete_Demo.ipynb")

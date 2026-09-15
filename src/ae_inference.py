@@ -10,6 +10,7 @@ from PIL import Image
 from skimage.metrics import structural_similarity
 
 from autoencoder import ConvolutionalAutoencoder
+from checkpoint_utils import validate_checkpoint_file
 
 
 def _state_dict(checkpoint: object) -> dict[str, torch.Tensor]:
@@ -41,8 +42,7 @@ def image_metrics(original: torch.Tensor, reconstructed: torch.Tensor) -> dict[s
 
 class AutoencoderInference:
     def __init__(self, checkpoint_path: str | Path, device: torch.device) -> None:
-        path = Path(checkpoint_path)
-        if not path.is_file(): raise FileNotFoundError(f"AE checkpoint not found: {path}")
+        path = validate_checkpoint_file(checkpoint_path, "Autoencoder")
         self.device = device
         self.model = ConvolutionalAutoencoder().to(device)
         checkpoint = torch.load(path, map_location=device, weights_only=True)

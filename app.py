@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import sys
+import json
+import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -15,11 +17,14 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from ae_inference import AutoencoderInference
+from document_parser import DocumentParseError, MAX_EVIDENCE_BYTES, parse_evidence_file
+from evidence_transformer import DEFAULT_PROMPT, EvidenceModelError, EvidenceTransformer
 from transformer_inference import TransformerInference
 from vae_inference import VAEInference
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 SUPPORTED_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
+MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
 st.set_page_config(page_title="Digital Evidence GenAI", page_icon="🔬", layout="wide", initial_sidebar_state="expanded")
 st.markdown("""
@@ -42,22 +47,86 @@ div[data-testid="stMetric"]{border:1px solid var(--line);border-radius:14px;padd
 </style>""", unsafe_allow_html=True)
 
 
+def configured_checkpoint(environment_name: str, default_path: str) -> Path:
+    configured = Path(os.getenv(environment_name, default_path))
+    return configured if configured.is_absolute() else ROOT / configured
+
+
 @st.cache_resource(show_spinner="Loading Autoencoder…")
 def load_ae():
     # Same architecture, using the improved epoch-76 checkpoint from the RTX-80 run.
     return AutoencoderInference(
-        ROOT / "checkpoints" / "best_autoencoder.pth", DEVICE
+        configured_checkpoint("AE_CHECKPOINT_PATH", "checkpoints/best_autoencoder_rtx80_portable.pth"),
+        DEVICE,
     )
 
 
 @st.cache_resource(show_spinner="Loading VAE V5 Final…")
 def load_vae():
-    return VAEInference(ROOT / "checkpoints" / "VAE_V5_FINAL.pth", DEVICE, 256)
+    return VAEInference(
+        configured_checkpoint("VAE_CHECKPOINT_PATH", "checkpoints/VAE_V5_FINAL.pth"), DEVICE, 256
+    )
 
 
 @st.cache_resource(show_spinner="Loading Transformer V2…")
 def load_transformer():
-    return TransformerInference(ROOT / "checkpoints" / "transformer_v2_final.pth", DEVICE)
+    return TransformerInference(
+        configured_checkpoint("VISION_TRANSFORMER_CHECKPOINT_PATH", "checkpoints/transformer_v2_final.pth"),
+        DEVICE,
+    )
+
+
+@st.cache_resource(show_spinner="Loading pretrained evidence Transformer…")
+def load_evidence_transformer():
+    return EvidenceTransformer(device=DEVICE)
+
+
+@st.cache_data
+def load_image_comparison() -> pd.DataFrame:
+    result_path = ROOT / "results" / "image_model_comparison.json"
+    payload = json.loads(result_path.read_text(encoding="utf-8"))
+    rows = payload["models"]
+    return pd.DataFrame(
+        {
+            "Model": [row["model"] for row in rows],
+            "Primary role": [row["primary_role"] for row in rows],
+            "Test images": [f"{int(row['test_images']):,}" for row in rows],
+            "MSE ↓": [f"{float(row['mse']):.6f}" for row in rows],
+            "PSNR ↑": [f"{float(row['psnr_db']):.4f} dB" for row in rows],
+            "SSIM ↑": [f"{float(row['ssim']):.6f}" for row in rows],
+            "Parameters": [f"{int(row['parameters']):,}" for row in rows],
+            "Epoch": [int(row["checkpoint_epoch"]) for row in rows],
+        }
+    )
+
+
+@st.cache_data
+def load_result(filename: str) -> dict:
+    return json.loads((ROOT / "results" / filename).read_text(encoding="utf-8"))
+
+
+@st.cache_data
+def load_demo_manifest() -> list[dict[str, str]]:
+    manifest_path = ROOT / "data" / "splits" / "test.csv"
+    if not manifest_path.is_file():
+        return []
+    frame = pd.read_csv(manifest_path)
+    selected = pd.concat(
+        [frame[frame["class_name"] == class_name].head(12) for class_name in ("authentic", "tampered")],
+        ignore_index=True,
+    )
+    records: list[dict[str, str]] = []
+    for _, row in selected.iterrows():
+        image_path = Path(str(row["image_path"]))
+        resolved = image_path if image_path.is_absolute() else ROOT / image_path
+        if resolved.is_file():
+            records.append(
+                {
+                    "label": f"{str(row['class_name']).title()} · {resolved.name}",
+                    "path": str(resolved),
+                }
+            )
+    return records
 
 
 def safe_load(loader, label):
@@ -74,6 +143,9 @@ def uploaded_image(uploaded):
         return None
     if Path(uploaded.name).suffix.lower() not in SUPPORTED_SUFFIXES:
         st.error("Unsupported format. Upload JPG, JPEG, PNG, BMP, TIF, or TIFF.")
+        return None
+    if uploaded.size > MAX_IMAGE_BYTES:
+        st.error(f"Image exceeds the {MAX_IMAGE_BYTES // (1024 * 1024)} MB in-memory limit.")
         return None
     try:
         image = Image.open(uploaded)
@@ -98,28 +170,96 @@ def metrics_cards(metrics):
 def compare_images(original, reconstructed, caption):
     left, right = st.columns(2, gap="large")
     with left:
-        st.markdown('<div class="small-label">Input</div>', unsafe_allow_html=True)
-        st.image(original, caption="Original image", width="stretch")
+        st.markdown('<div class="small-label">Original Image</div>', unsafe_allow_html=True)
+        st.image(original, caption="Original Image", width="stretch")
     with right:
-        st.markdown('<div class="small-label">Model output</div>', unsafe_allow_html=True)
+        st.markdown('<div class="small-label">Reconstructed Image</div>', unsafe_allow_html=True)
         st.image(reconstructed, caption=caption, width="stretch", clamp=True)
 
 
-def upload_box(key):
-    upload = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png", "bmp", "tif", "tiff"], key=key)
+def image_input(key):
+    demo_records = load_demo_manifest()
+    choices = ["Upload image"] + (["Canonical test demo"] if demo_records else [])
+    source = st.radio("Image source", choices, horizontal=True, key=f"{key}_source")
+    if source == "Canonical test demo":
+        labels = [record["label"] for record in demo_records]
+        selected_label = st.selectbox(
+            "Choose one of 24 reproducible held-out examples", labels, key=f"{key}_demo"
+        )
+        selected = demo_records[labels.index(selected_label)]
+        try:
+            with Image.open(selected["path"]) as opened:
+                image = opened.convert("RGB").copy()
+            st.caption(f"{selected_label} · canonical test manifest · {image.width}×{image.height} · RGB")
+            return image
+        except (UnidentifiedImageError, OSError, ValueError) as exc:
+            st.error(f"The selected demo image could not be read: {exc}")
+            return None
+
+    upload = st.file_uploader(
+        "Choose an image",
+        type=["jpg", "jpeg", "png", "bmp", "tif", "tiff"],
+        key=key,
+        help=f"Supported images up to {MAX_IMAGE_BYTES // (1024 * 1024)} MB; processed in memory.",
+    )
     image = uploaded_image(upload)
     if image is None:
-        st.markdown('<div class="upload-guide">Upload a supported image to begin reconstruction and metric analysis.</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="upload-guide">Upload a supported image to begin reconstruction and metric analysis.</div>',
+            unsafe_allow_html=True,
+        )
     else:
         st.caption(f"{upload.name} · original size {image.width}×{image.height} · RGB")
     return image
+
+
+def verified_test_cards(filename: str, count_key: str) -> None:
+    try:
+        result = load_result(filename)
+        overall = result["overall"]
+        cards = st.columns(4)
+        cards[0].metric("Canonical test images", f"{int(result[count_key]):,}")
+        cards[1].metric("Test MSE ↓", f"{float(overall['mse_mean']):.6f}")
+        cards[2].metric("Test PSNR ↑", f"{float(overall['psnr_mean']):.4f} dB")
+        cards[3].metric("Test SSIM ↑", f"{float(overall['ssim_mean']):.6f}")
+    except (FileNotFoundError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        st.warning(f"Verified test summary is unavailable: {exc}")
+
+
+def processing_consent(key: str) -> bool:
+    return st.checkbox(
+        "I am authorized to process this evidence and consent to in-session analysis.",
+        key=f"{key}_processing_consent",
+        help="Only submit evidence you are permitted to use. This prototype does not establish legal authority.",
+    )
+
+
+def clear_session_evidence() -> int:
+    prefixes = ("ae_", "vae_", "transformer_", "evidence_")
+    keys = [key for key in st.session_state if key.startswith(prefixes)]
+    for key in keys:
+        del st.session_state[key]
+    return len(keys)
 
 
 with st.sidebar:
     st.markdown("## 🔬 Digital Evidence AI")
     st.caption("Semester 7 · Generative AI")
     st.divider()
-    page = st.radio("Navigate", ["Project Overview", "Autoencoder", "VAE V5 Final", "Transformer V2", "Model Comparison"], label_visibility="collapsed")
+    page = st.radio(
+        "Navigate",
+        [
+            "Project Overview",
+            "Autoencoder",
+            "Variational Autoencoder",
+            "Vision Transformer",
+            "Evidence Intelligence Transformer",
+            "Model Evaluation",
+            "Privacy & Ethical AI",
+            "Project Information",
+        ],
+        label_visibility="collapsed",
+    )
     st.divider()
     st.markdown("**Runtime device**")
     st.caption(torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU")
@@ -128,19 +268,20 @@ with st.sidebar:
     st.caption("CASIA v2.0 · 12,614 images")
     st.caption("Academic research prototype")
 
-st.markdown("""<div class="hero"><div class="eyebrow">Multi-model generative AI framework</div><h1>Digital Evidence Analysis and Intelligence Generation</h1><p>Comparing deterministic, probabilistic, and attention-based image reconstruction for digital-evidence research using CASIA v2.0.</p></div>""", unsafe_allow_html=True)
+st.markdown("""<div class="hero"><div class="eyebrow">Multi-model generative AI framework</div><h1>Digital Evidence Analysis and Intelligence Generation</h1><p>Deterministic, probabilistic, and attention-based image reconstruction plus pretrained Transformer assistance for text and PDF evidence.</p></div>""", unsafe_allow_html=True)
 
 
 if page == "Project Overview":
-    heading("Project foundation", "A reconstruction-first forensic research framework", "Three complementary neural architectures reconstruct digital images, represent visual information, and expose exploratory anomaly signals. The application supports analysis—it does not issue forensic verdicts.")
+    heading("Project foundation", "A multi-model evidence research framework", "Three trained image architectures support reconstruction research, while a separate pretrained language Transformer assists with text evidence. The application does not issue forensic verdicts.")
     counts = st.columns(4)
     for column, label, value in zip(counts, ["CASIA images", "Authentic", "Tampered", "Held-out test"], ["12,614", "7,491", "5,123", "1,892"]):
         column.metric(label, value)
     st.markdown("### Current model modules")
-    cards = st.columns(3, gap="large")
+    cards = st.columns(4, gap="large")
     cards[0].markdown('<div class="model-card"><span class="tag">Deterministic</span><h3>Autoencoder</h3><p>Compact-bottleneck reconstruction, compression, and denoising experiments.</p></div>', unsafe_allow_html=True)
     cards[1].markdown('<div class="model-card"><span class="tag">Probabilistic</span><h3>VAE V5 Final</h3><p>256-dimensional probabilistic representation with high-quality skip-connected reconstruction.</p></div>', unsafe_allow_html=True)
     cards[2].markdown('<div class="model-card"><span class="tag">Attention</span><h3>Transformer V2</h3><p>Patch-token reconstruction with interpretable learned attention relationships.</p></div>', unsafe_allow_html=True)
+    cards[3].markdown('<div class="model-card"><span class="tag">Pretrained SLM</span><h3>Evidence Intelligence</h3><p>Token-aware assistance for pasted text and digitally extractable PDF evidence.</p></div>', unsafe_allow_html=True)
     st.markdown("### Analysis workflow")
     st.markdown('<div class="workflow">Upload → RGB preprocessing → reconstruction → MSE · PSNR · SSIM → exploratory interpretation</div>', unsafe_allow_html=True)
     st.markdown('<div class="guardrail"><b>Interpretation boundary:</b> reconstruction error, thresholds, difference maps, and attention are not proof of manipulation and must not be treated as legal or forensic conclusions.</div>', unsafe_allow_html=True)
@@ -156,11 +297,15 @@ elif page == "Autoencoder":
     for column, label, value in zip(info, ["Input", "Latent", "Compression", "Parameters"], ["3×128×128", "32×8×8", "24×", "265,571"]):
         column.metric(label, value)
     st.markdown('<div class="workflow">RGB image → convolutional encoder → compact latent → decoder → reconstruction</div>', unsafe_allow_html=True)
+    st.markdown("#### Verified canonical test result")
+    verified_test_cards("ae_rtx80_test_metrics.json", "number_of_test_images")
     model, error = safe_load(load_ae, "Autoencoder")
     if error:
         st.error(error)
     else:
-        image = upload = upload_box("ae_upload")
+        image = image_input("ae_upload") if processing_consent("ae") else None
+        if image is None and not st.session_state.get("ae_processing_consent", False):
+            st.info("Confirm authorization and consent to enable evidence input.")
         if image is not None:
             try:
                 with st.spinner("Reconstructing image…"):
@@ -177,28 +322,75 @@ elif page == "Autoencoder":
         st.write("Complete held-out test: MSE 0.00303199 · PSNR 26.0159 dB · SSIM 0.792911.")
 
 
-elif page == "VAE V5 Final":
-    heading("Model 02 · probabilistic reconstruction", "Variational Autoencoder V5 Final", "Explore skip-connected reconstruction and a 256-dimensional probabilistic latent representation. Random prior sampling is retained as an experimental capability.")
+elif page == "Variational Autoencoder":
+    heading("Model 02 · probabilistic reconstruction", "Variational Autoencoder V5 Final", "Compare the deterministic posterior mean with genuine image-conditioned samples from the learned 256-dimensional latent distribution.")
     info = st.columns(4)
     for column, label, value in zip(info, ["Input", "Latent", "Parameters", "Checkpoint epoch"], ["3×128×128", "256", "17,599,971", "79"]):
         column.metric(label, value)
     st.markdown('<div class="workflow">Encoder → μ and log variance → latent z → skip-connected decoder → reconstruction</div>', unsafe_allow_html=True)
+    st.markdown("#### Verified canonical test result")
+    verified_test_cards("vae_v5_final_test_metrics.json", "test_images")
     model, error = safe_load(load_vae, "VAE V5 Final")
     if error:
         st.error(error)
     else:
-        reconstruction_tab, generation_tab = st.tabs(["Image reconstruction", "Experimental generation"])
+        reconstruction_tab, generation_tab = st.tabs(["Probabilistic reconstructions", "Prior-only limitation"])
         with reconstruction_tab:
-            image = upload_box("vae_upload")
+            controls = st.columns(3)
+            temperature = controls[0].slider(
+                "Sampling temperature", 0.25, 3.0, 1.0, 0.25,
+                help="Scales posterior uncertainty; higher values produce larger latent changes.",
+            )
+            sample_count = controls[1].select_slider(
+                "Stochastic samples", options=[1, 2, 3, 4], value=3
+            )
+            sample_seed = controls[2].number_input(
+                "Random seed", min_value=0, max_value=2_147_483_647, value=42, step=1
+            )
+            image = image_input("vae_upload") if processing_consent("vae") else None
+            if image is None and not st.session_state.get("vae_processing_consent", False):
+                st.info("Confirm authorization and consent to enable evidence input.")
             if image is not None:
                 try:
-                    with st.spinner("Reconstructing with VAE V5…"):
-                        original, reconstructed, result = model.reconstruct(image)
-                    compare_images(original, reconstructed, "VAE reconstruction using z = μ")
+                    with st.spinner("Sampling the image-conditioned VAE posterior…"):
+                        original, reconstructed, variations, result = model.reconstruct_variations(
+                            image,
+                            n_samples=int(sample_count),
+                            temperature=float(temperature),
+                            seed=int(sample_seed),
+                        )
+                    compare_images(original, reconstructed, "Deterministic Reconstruction (z = μ)")
                     metrics_cards(result)
+                    st.markdown("#### Probabilistic latent variations")
+                    variation_columns = st.columns(len(variations))
+                    for index, (column, variation) in enumerate(zip(variation_columns, variations), 1):
+                        with column:
+                            st.markdown(
+                                f'<div class="small-label">Stochastic Variation {index}</div>',
+                                unsafe_allow_html=True,
+                            )
+                            st.image(
+                                variation["image"],
+                                caption=f"z = μ + {temperature:.2f}σε",
+                                width="stretch",
+                                clamp=True,
+                            )
+                            st.caption(
+                                "Mean |pixel delta| from deterministic: "
+                                f"{variation['mean_abs_delta_from_deterministic']:.6f}"
+                            )
+                    st.caption(
+                        f"Reproducible posterior samples · seed {int(sample_seed)} · "
+                        f"temperature {temperature:.2f}. Small visual differences may reflect the "
+                        "checkpoint's strong skip connections."
+                    )
                     st.markdown('<div class="guardrail"><b>Exploratory indicator:</b> MSE is reconstruction error—not a tampering probability or standalone decision.</div>', unsafe_allow_html=True)
+                    st.info(
+                        "These are probabilistic latent reconstructions conditioned on the uploaded image. "
+                        "They are model samples—not newly discovered forensic features or evidence of manipulation."
+                    )
                 except Exception as exc:
-                    st.error(f"VAE reconstruction failed: {exc}")
+                    st.error(f"VAE posterior sampling failed: {exc}")
         with generation_tab:
             st.info("VAE V5 was optimized with encoder skip features. Random prior samples lack those features and may appear dark or visually degenerate.")
             if st.button("Generate experimental latent sample", type="primary"):
@@ -214,7 +406,7 @@ elif page == "VAE V5 Final":
         st.write("MSE ROC-AUC 0.5154 indicates almost no useful tampering ranking by reconstruction error alone.")
 
 
-elif page == "Transformer V2":
+elif page == "Vision Transformer":
     heading("Model 03 · patch attention", "Transformer Forensic Autoencoder V2", "The image becomes 64 patch tokens. Self-attention models patch relationships while all encoded spatial tokens are retained for reconstruction.")
     info = st.columns(4)
     for column, label, value in zip(info, ["Input", "Patch size", "Patch tokens", "Embedding"], ["3×128×128", "16×16", "64", "256"]):
@@ -223,11 +415,15 @@ elif page == "Transformer V2":
     for column, label, value in zip(layers, ["Attention heads", "Encoder layers", "Decoder layers"], ["8", "4", "2"]):
         column.metric(label, value)
     st.markdown('<div class="workflow">Image → 8×8 patch grid → attention encoder → token decoder → reconstruction + attention view</div>', unsafe_allow_html=True)
+    st.markdown("#### Verified canonical test result")
+    verified_test_cards("transformer_v2_test_metrics.json", "test_images")
     model, error = safe_load(load_transformer, "Transformer V2")
     if error:
         st.error(error)
     else:
-        image = upload_box("transformer_upload")
+        image = image_input("transformer_upload") if processing_consent("transformer") else None
+        if image is None and not st.session_state.get("transformer_processing_consent", False):
+            st.info("Confirm authorization and consent to enable evidence input.")
         if image is not None:
             try:
                 with st.spinner("Running patch-attention reconstruction…"):
@@ -256,15 +452,115 @@ elif page == "Transformer V2":
         st.write("Saved reconstruction-error ROC-AUC 0.5455 indicates limited separation.")
 
 
-else:
+elif page == "Evidence Intelligence Transformer":
+    heading(
+        "Pretrained language model integration",
+        "Text/PDF Evidence Intelligence Transformer",
+        "Extract text, inspect tokenization, and use a no-key pretrained FLAN-T5 model to generate review-oriented observations. This module is separate from the trained Vision Transformer.",
+    )
+    st.markdown(
+        '<div class="workflow">TXT or digital PDF → in-memory extraction → token-aware chunks → tokenizer → pretrained Transformer → evidence-oriented output</div>',
+        unsafe_allow_html=True,
+    )
+    st.info(
+        "The language model is pretrained and integrated for this project; it was not trained from scratch by the team. "
+        "The first model load may download open-source weights."
+    )
+    evidence_consent = processing_consent("evidence")
+
+    source_tab, upload_tab = st.tabs(["Paste evidence text", "Upload TXT or PDF"])
+    evidence_text = ""
+    source_description = "Pasted text"
+    with source_tab:
+        pasted_text = st.text_area(
+            "Evidence text",
+            height=220,
+            placeholder="Paste a transcript, incident narrative, extracted message log, or other text evidence…",
+            key="evidence_pasted_text",
+            disabled=not evidence_consent,
+        )
+        if evidence_consent and pasted_text.strip():
+            evidence_text = pasted_text.strip()
+    with upload_tab:
+        evidence_upload = st.file_uploader(
+            "Choose evidence",
+            type=["txt", "pdf"],
+            key="evidence_document_upload",
+            help=f"TXT or digitally extractable PDF, up to {MAX_EVIDENCE_BYTES // (1024 * 1024)} MB.",
+            disabled=not evidence_consent,
+        )
+        if evidence_consent and evidence_upload is not None:
+            try:
+                parsed = parse_evidence_file(evidence_upload.name, evidence_upload.getvalue())
+                evidence_text = parsed.text
+                source_description = evidence_upload.name
+                page_detail = f" · {parsed.page_count} page(s)" if parsed.page_count is not None else ""
+                st.success(f"Extracted {parsed.character_count:,} characters{page_detail} in memory.")
+            except DocumentParseError as exc:
+                st.error(str(exc))
+
+    if evidence_text:
+        with st.expander("Extracted evidence preview", expanded=True):
+            st.text(evidence_text[:4_000])
+            if len(evidence_text) > 4_000:
+                st.caption(f"Preview shows 4,000 of {len(evidence_text):,} characters; generation uses token-aware chunks.")
+        prompt = st.text_area(
+            "Analyst prompt",
+            value=DEFAULT_PROMPT,
+            height=180,
+            help="The default six-line prompt requests facts, entities, cautious observations, and limitations.",
+        )
+        max_new_tokens = st.slider("Maximum generated tokens", 64, 384, 192, 32)
+        if st.button("Generate evidence intelligence", type="primary", disabled=not evidence_consent):
+            model, error = safe_load(load_evidence_transformer, "Evidence Transformer")
+            if error:
+                st.error(error)
+            else:
+                try:
+                    with st.spinner("Tokenizing evidence and generating observations…"):
+                        result = model.generate(evidence_text, prompt, int(max_new_tokens))
+                    st.markdown("### Generated evidence intelligence")
+                    st.write(result.output)
+                    if result.truncated:
+                        st.warning(
+                            f"Document limit reached: processed {result.chunks_processed} of "
+                            f"{result.chunks_available} chunks ({result.processed_tokens:,} of "
+                            f"{result.input_tokens:,} evidence tokens)."
+                        )
+                    metadata = st.columns(4)
+                    metadata[0].metric("Input tokens", f"{result.input_tokens:,}")
+                    metadata[1].metric("Processed chunks", f"{result.chunks_processed}/{result.chunks_available}")
+                    metadata[2].metric("Output tokens", f"{result.output_tokens:,}")
+                    metadata[3].metric("Inference time", f"{result.inference_seconds:.2f} s")
+                    st.caption(
+                        f"Source: {source_description} · Model: {result.model_id} · deterministic beam search"
+                    )
+                except (EvidenceModelError, ValueError) as exc:
+                    st.error(f"Evidence generation could not continue: {exc}")
+                except Exception as exc:
+                    st.error(f"Unexpected evidence-generation failure: {exc}")
+    else:
+        st.markdown(
+            '<div class="upload-guide">Confirm authorization, then paste evidence text or upload a UTF-8 TXT/digitally extractable PDF.</div>',
+            unsafe_allow_html=True,
+        )
+    st.markdown(
+        '<div class="guardrail"><b>Responsible use:</b> Research/educational use only. Verify generated observations against original evidence. Generated text may contain errors and must not be the sole legal or forensic basis.</div>',
+        unsafe_allow_html=True,
+    )
+
+
+elif page == "Model Evaluation":
     heading("Evidence-based comparison", "Model roles and measured outcomes", "Each architecture has a distinct objective. Reconstruction metrics compare output with input; they do not establish a single overall ranking or forensic validity.")
-    comparison = pd.DataFrame([
-        {"Model":"Autoencoder RTX-80 Final","Primary role":"Deterministic reconstruction + compression","MSE ↓":"0.00303199","PSNR ↑":"26.0159","SSIM ↑":"0.792911","ROC-AUC":"N/A"},
-        {"Model":"VAE V5 Final","Primary role":"Probabilistic representation + reconstruction","MSE ↓":"0.00070007","PSNR ↑":"32.9535","SSIM ↑":"0.961139","ROC-AUC":"0.5154"},
-        {"Model":"Transformer V2","Primary role":"Patch-attention reconstruction","MSE ↓":"0.00206004*","PSNR ↑":"N/A","SSIM ↑":"N/A","ROC-AUC":"0.5455"},
-    ])
-    st.dataframe(comparison, hide_index=True, width="stretch")
-    st.caption("*Transformer MSE is the saved best validation result, not the canonical test metric used for AE/VAE.")
+    try:
+        comparison = load_image_comparison()
+        st.dataframe(comparison, hide_index=True, width="stretch")
+        st.caption(
+            "All three rows use the same canonical 1,892-image held-out test split. "
+            "Values are loaded from verified result artifacts, not validation metrics."
+        )
+    except (FileNotFoundError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        st.error(f"Verified comparison results are unavailable: {exc}")
     roles = st.columns(3, gap="large")
     roles[0].success("**AE**\n\nUnderstandable deterministic compression and reconstruction baseline.")
     roles[1].info("**VAE V5**\n\nStrongest current reconstruction with probabilistic representation; weak prior-only generation.")
@@ -274,6 +570,83 @@ else:
         st.write("MSE, PSNR, and SSIM describe reconstruction fidelity.")
         st.write("ROC-AUC describes ranking separation; values near 0.5 are close to random ranking.")
         st.write("Different evaluation subsets must not be presented as directly equivalent.")
+
+
+elif page == "Privacy & Ethical AI":
+    heading(
+        "Deployment safeguards",
+        "Privacy-oriented and responsible-use controls",
+        "Operational safeguards and GDPR-oriented design principles are documented here. Formal compliance is not claimed.",
+    )
+    controls = st.columns(3, gap="large")
+    controls[0].markdown(
+        '<div class="model-card"><span class="tag">Minimize</span><h3>Input controls</h3><p>Explicit authorization gate, allowlisted extensions, 10 MB limits, readable-content validation, and no OCR overreach.</p></div>',
+        unsafe_allow_html=True,
+    )
+    controls[1].markdown(
+        '<div class="model-card"><span class="tag">Retain briefly</span><h3>Session processing</h3><p>Uploaded content is processed in memory/session state. Project code does not automatically save evidence or generated text to repository files.</p></div>',
+        unsafe_allow_html=True,
+    )
+    controls[2].markdown(
+        '<div class="model-card"><span class="tag">Human review</span><h3>Decision boundary</h3><p>Outputs are research assistance only. They cannot establish authenticity, guilt, admissibility, or a legal conclusion.</p></div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### Evidence data flow")
+    st.markdown(
+        '<div class="workflow">Authorized input → validated in memory → local model inference → on-screen result → explicit clear or session end</div>',
+        unsafe_allow_html=True,
+    )
+    st.write(
+        "The pretrained language model runs locally after its public weights are downloaded; this project does not "
+        "send evidence text to a paid API. On a hosted Streamlit deployment, evidence necessarily travels to that "
+        "host, so HTTPS, access control, host logging, regional hosting, and organizational retention policy must be "
+        "configured by the deployer."
+    )
+
+    st.markdown("### GDPR-oriented design principles")
+    principles = pd.DataFrame(
+        [
+            {"Principle": "Data minimization", "Implemented measure": "Only the evidence needed for the selected analysis is requested; input size and type are constrained."},
+            {"Principle": "Purpose limitation", "Implemented measure": "The interface states research/educational evidence analysis as the purpose and prohibits verdict claims."},
+            {"Principle": "Transparency", "Implemented measure": "Model identity, pretrained status, processed-token limits, uncertainty, and output limitations are shown."},
+            {"Principle": "Storage limitation", "Implemented measure": "No automatic permanent evidence save; users can clear evidence state and should end the session after use."},
+            {"Principle": "Integrity/confidentiality", "Implemented measure": "Allowlisting and parsing reduce malformed inputs; production deployment still requires HTTPS, authentication, authorization, and secured logs."},
+        ]
+    )
+    st.dataframe(principles, hide_index=True, width="stretch")
+    st.warning(
+        "These are privacy-oriented engineering measures and principles, not a claim of formal GDPR compliance. "
+        "A production deployment requires legal review, documented lawful basis, data-subject procedures, security "
+        "assessment, retention policy, and governance appropriate to its jurisdiction and use."
+    )
+    if st.button("Clear evidence from this app session", type="secondary"):
+        cleared = clear_session_evidence()
+        st.success(f"Cleared {cleared} evidence-related session value(s).")
+
+
+else:
+    heading(
+        "Review-2 implementation",
+        "Project Information",
+        "A reproducible academic prototype built for Semester 7 Generative AI review and live faculty demonstration.",
+    )
+    details = st.columns(3)
+    details[0].metric("Required architectures", "3")
+    details[1].metric("Canonical test images", "1,892")
+    details[2].metric("Demo samples", "24")
+    st.markdown("### Implemented scope")
+    st.write(
+        "Convolutional Autoencoder, VAE V5, trained Vision Transformer V2, and a separate pretrained "
+        "FLAN-T5 evidence-intelligence integration. GAN code/checkpoints remain preserved for the later phase."
+    )
+    st.markdown("### Current boundaries")
+    st.write(
+        "Diffusion is not implemented. No model is validated as a standalone forgery detector, and the "
+        "application does not make legal, authenticity, guilt, or admissibility decisions."
+    )
+    st.markdown("### Runtime")
+    st.code(f"Python · PyTorch {torch.__version__} · Streamlit {st.__version__} · device {DEVICE}")
 
 st.divider()
 left, right = st.columns([3, 1])

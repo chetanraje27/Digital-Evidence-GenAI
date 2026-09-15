@@ -1,642 +1,273 @@
 # Multi-Model Generative AI Framework for Digital Evidence Analysis and Intelligence Generation
 
-## 1. Project Overview
+Semester 7 Generative AI project prepared for Review 2. The repository combines three trained image architectures with a separate pretrained text Transformer integration:
 
-This academic project studies how several generative deep-learning approaches behave on digital image evidence. It uses the CASIA v2.0 Image Tampering Detection Dataset to investigate deterministic reconstruction and compression, probabilistic latent representations, image denoising, and synthetic-image generation.
+1. Convolutional Autoencoder — deterministic reconstruction and compression.
+2. Variational Autoencoder V5 — probabilistic latent representation, deterministic reconstruction, and image-conditioned stochastic reconstructions.
+3. Vision Transformer V2 — patch-token self-attention reconstruction and exploratory attention visualization.
+4. Evidence Intelligence Transformer — no-key pretrained FLAN-T5 integration for pasted text and digitally extractable PDFs.
 
-The current review build implements:
+The trained GAN implementation and checkpoints remain preserved for the later course phase but are intentionally absent from the current GUI. Diffusion is not implemented.
 
-1. a convolutional Autoencoder (AE), including a denoising experiment;
-2. a convolutional Variational Autoencoder (VAE), with baseline V1 and KL-warm-up V2 experiments; and
-3. a patch-based Transformer Forensic Autoencoder V2.
+## Responsible-use boundary
 
-The repository retains the completed DCGAN and its artifacts for later use, but GAN is temporarily removed from the main GUI. The project does **not** yet implement a complete forensic intelligence-generation system. Diffusion remains future work.
+This is an academic research prototype, not a forensic decision system. Reconstruction error is not a tampering probability. Attention is not proof or definitive localization of manipulation. Generated language may contain errors. No model output should be the sole basis for authenticity, guilt, admissibility, attribution, or another legal/forensic conclusion.
 
-## 2. Current Project Status
+The app implements privacy-oriented controls and GDPR-oriented design principles; it does not claim formal GDPR compliance.
 
-| Module | Status | Purpose |
-| --- | --- | --- |
-| CASIA dataset pipeline | Completed | Inventory, validation, portable stratified splits, and reusable loaders |
-| Standard Autoencoder | Completed | Deterministic reconstruction and 24× latent compression |
-| Denoising Autoencoder experiment | Completed | Reconstruction of clean images from Gaussian-noise inputs |
-| VAE V1/V2 | Historical baselines | Earlier probabilistic reconstruction and sampling experiments |
-| VAE V5 forensic | **Current / completed** | Authentic-only reconstruction learning and exploratory anomaly analysis |
-| DCGAN | Completed | Adversarial generation of 64×64 synthetic images |
-| Quantitative evaluation | Completed | Reconstruction metrics, KL, FID, and Inception Score where applicable |
-| Streamlit GUI | Completed | Cached inference for AE, VAE V5 Final, and Transformer V2 |
-| Auxiliary ResNet-18 classifier notebook | Experimental | Separate real-vs-fake classification study; not part of the generative pipeline or GUI |
-| Transformer V2 | **Current / completed** | Patch-attention reconstruction and exploratory anomaly analysis |
-| Diffusion model | Planned | Future image-generation component |
-| Integrated intelligence generation | Planned | Future multi-model reasoning and reporting layer |
+## Verified repository state
 
-## 3. Dataset — CASIA v2.0
+### Dataset and canonical split
 
-The project uses the **CASIA v2.0 Image Tampering Detection Dataset**, obtained from Kaggle under <code>divg07/casia-20-image-tampering-detection-dataset</code>. CASIA was selected because it provides a substantial set of authentic and manipulated images, together with tampering ground-truth masks, and is widely suitable for course-level image-forensics experiments.
+CASIA v2.0 model inputs contain 12,614 RGB images. Ground-truth mask PNGs are excluded from model inputs.
 
-| Category | Count |
-| --- | ---: |
-| Authentic images | 7,491 |
-| Tampered images | 5,123 |
-| Model-input images | **12,614** |
-| Ground-truth masks | 5,123 |
-| All supported image and mask files | 17,737 |
-| Corrupt/unreadable files found | 0 |
-
-The inventory records RGB authentic and tampered images in JPG, TIF, and BMP formats. The most common dimensions are 384×256 and 256×384. Corresponding ground-truth masks are PNG files held separately from normal model input.
-
-The discovered directories are:
-
-- <code>CASIA2/Au</code> — authentic images;
-- <code>CASIA2/Tp</code> — tampered images; and
-- <code>CASIA2/CASIA 2 Groundtruth</code> — PNG masks.
-
-Masks are excluded by the inventory/split pipeline rather than inferred from an image label. This prevents target-mask leakage into AE, VAE, or GAN inputs. The original dataset is intentionally not committed to GitHub.
-
-## 4. Dataset Preparation
-
-The reusable pipeline is implemented by <code>src/explore_dataset.py</code>, <code>src/prepare_ae_data.py</code>, and <code>src/ae_dataset.py</code>.
-
-For AE and VAE:
-
-- images are opened safely with Pillow and converted to RGB;
-- images are resized to 128×128;
-- tensors remain in the [0, 1] range;
-- ImageNet normalization is not applied; and
-- authentic/tampered labels are retained as metadata, not reconstruction targets.
-
-For DCGAN, the same split manifests are reused, but images are resized to 64×64 and normalized to [-1, 1] for the generator's Tanh output.
-
-The dataset is stratified with random seed 42:
-
-| Split | Total | Authentic (0) | Tampered (1) |
+| Split | Total | Authentic | Tampered |
 | --- | ---: | ---: | ---: |
 | Train | 8,830 | 5,244 | 3,586 |
 | Validation | 1,892 | 1,124 | 768 |
 | Test | 1,892 | 1,123 | 769 |
-| **Total** | **12,614** | **7,491** | **5,123** |
 
-The CSV manifests under <code>data/splits/</code> store portable relative paths with <code>image_path</code>, <code>label</code>, and <code>class_name</code>. Repository validation found zero cross-split duplicate paths and zero included mask paths.
+The manifests in `data/splits/` use repository-relative paths and seed 42. Raw CASIA data is intentionally ignored by Git.
 
-## 5. Autoencoder (AE)
+### Same-split image reconstruction comparison
 
-### Purpose
+Every row below comes from the same canonical 1,892-image test manifest. Values are generated from verified JSON files by `src/build_model_comparison.py`.
 
-The standard AE learns a deterministic mapping from an image to a lower-dimensional representation and back to a reconstruction. Its labels are preserved only for later group-level exploratory analysis.
+| Model | MSE ↓ | PSNR ↑ | SSIM ↑ | Parameters | Epoch |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Autoencoder RTX-80 Final | 0.00303199 | 26.0159 dB | 0.792911 | 265,571 | 76 |
+| VAE V5 Final | 0.00070007 | 32.9535 dB | 0.961139 | 17,599,971 | 79 |
+| Vision Transformer V2 | 0.00220733 | 27.2652 dB | 0.844864 | 3,591,168 | 50 |
 
-### Architecture
+Authoritative artifacts:
 
-The encoder uses strided convolution blocks and the decoder uses transposed convolutions:
+- `results/image_model_comparison.json`
+- `results/image_model_comparison.csv`
+- `results/ae_rtx80_test_metrics.json`
+- `results/vae_v5_final_test_metrics.json`
+- `results/transformer_v2_test_metrics.json`
+- `results/transformer_v2_test_per_image_metrics.csv`
 
-<pre>
-Input 3×128×128
-  → convolutional encoder
-  → latent 32×8×8
-  → transposed-convolution decoder
-  → output 3×128×128 with Sigmoid
-</pre>
+MSE, PSNR, and SSIM measure reconstruction fidelity only. The VAE's exploratory MSE ROC-AUC is 0.5154 and the newly measured Vision Transformer MSE ROC-AUC is 0.5413, both indicating weak reconstruction-error ranking rather than validated forgery detection.
 
-| Property | Value |
-| --- | ---: |
-| Input values per image | 49,152 |
-| Latent values per image | 2,048 |
-| Compression ratio | 24× |
-| Parameters | 265,571 |
+## Model details
 
-### Final standard-AE training
+### Autoencoder RTX-80 Final
 
-The current history contains the newer 50-epoch-configured experiment, not only the earlier 20-epoch run. Early stopping ended training after epoch 46, with the best validation checkpoint at epoch 42.
+- Input: `3 × 128 × 128`
+- Latent tensor: `32 × 8 × 8` (2,048 values)
+- Compression ratio: `24×`
+- Parameters: 265,571
+- Active checkpoint: `checkpoints/best_autoencoder_rtx80_portable.pth`
+- Best checkpoint epoch: 76
+- Validation MSE: 0.00305005
+- Loss/role: deterministic MSE reconstruction, not classification
 
-| Setting/result | Value |
-| --- | ---: |
-| Optimizer | Adam |
-| Learning rate | 0.001 |
-| Loss | MSE |
-| Batch size | 32 |
-| Maximum epochs | 50 |
-| Epochs completed | 46 |
-| Early-stopping patience | 4 |
-| First train loss | 0.02793490 |
-| Final train loss | 0.00363512 |
-| Best validation loss | 0.00355497 |
-| Best epoch | 42 |
-| Recorded device | Tesla T4 |
-| Recorded training time | 1,906.4 s (about 31.8 min) |
+The GUI labels outputs as `Original Image` and `Reconstructed Image` and does not issue an authenticity verdict.
 
-The training time and GPU are recorded in the faculty-demo notebook; the checkpoint itself records epoch 42 and the validation loss.
-
-### Standard-AE evaluation
-
-The complete held-out test set of 1,892 images produced:
-
-| Group | MSE ↓ | PSNR ↑ | SSIM ↑ |
-| --- | ---: | ---: | ---: |
-| Overall | **0.00353242** | **25.3077 dB** | **0.761558** |
-| Authentic (1,123) | 0.00342173 | 25.4430 dB | 0.766052 |
-| Tampered (769) | 0.00369406 | 25.1100 dB | 0.754995 |
-
-These results supersede the older AE values still hard-coded in the current GUI comparison table.
-
-### Denoising experiment
-
-The denoising experiment starts from the standard AE checkpoint and uses configurable Gaussian noise (recorded standard deviation 0.10). Its test comparison reports noisy-input MSE 0.00904314 and denoised-output MSE 0.00375649, with denoised PSNR 24.9341 dB and SSIM 0.732429. This is an image-restoration experiment, not a forgery-classification result.
-
-### Interpretation
-
-The AE is **not trained or validated as a forgery classifier**. Differences between authentic and tampered reconstruction statistics are exploratory group observations and do not prove that an individual image is forged.
-
-## 6. Variational Autoencoder (VAE)
-
-### Purpose and architecture
-
-The current VAE is **VAE V5 Final — Reconstruction and Exploratory Anomaly Analysis**. Its current checkpoint comes from the mixed CASIA reconstruction experiment. Reconstruction behavior can be compared between authentic and tampered images, but it is not a calibrated tampering classifier.
-
-VAE V5 processes 3×128×128 RGB inputs through four convolutional stages (32, 64, 128, and 256 channels). Residual blocks, GroupNorm, and SiLU activations are used throughout. Separate fully connected heads produce 256-dimensional μ and log-variance vectors. The decoder combines a latent projection with encoder skip features, bilinear upsampling, convolutional residual blocks, and a final Sigmoid output.
-
-| Property | VAE V5 |
-| --- | ---: |
-| Latent dimension | 256 |
-| Parameters | 17,599,971 |
-| Reconstruction mode | Deterministic z=μ with encoder skips |
-| Training scope | Authentic only |
-
-<pre>
-σ = exp(0.5 × logvar)
-ε ~ N(0, I)
-z = μ + σ × ε
-</pre>
-
-### Loss and KL warm-up
-
-The final V5 loss is the exact hybrid objective from the source experiment:
-
-<pre>
-Reconstruction = 0.5 × MSE + 0.5 × L1
-KL = mean[-0.5 × sum(1 + logvar - μ² - exp(logvar))]
-Total = Reconstruction + β × KL
-</pre>
-
-β increases linearly from 0.00005 to 0.00030 over the first 20 epochs and remains at 0.00030 afterward. KL regularizes the latent distribution; lower KL does not automatically mean better reconstruction quality.
-
-### Training configuration and checkpoint provenance
-
-The source experiment uses AdamW, learning rate 0.0001, weight decay 0.00001, batch size 32, gradient clipping at 1.0, a 20-epoch KL warm-up, and checkpoint selection by validation MSE.
-
-The current `VAE_V5_FINAL.pth` checkpoint records **epoch 79**, validation MSE **0.000978699**, validation PSNR **30.093507 dB**, and validation KL **0.00867804**. Historical authentic-only and V1/V2 checkpoints are preserved locally under the Git-ignored `bin/` archive.
-
-### Canonical test evaluation
-
-The current checkpoint was evaluated deterministically on the repository's exact 1,892-image test split:
-
-| Group | MSE ↓ | PSNR ↑ | SSIM ↑ | Mean KL |
-| --- | ---: | ---: | ---: | ---: |
-| Overall (1,892) | **0.00070007** | **32.9535 dB** | **0.961139** | 0.01292955 |
-| Authentic (1,123) | 0.00070925 | 33.0049 dB | 0.962650 | 0.01816685 |
-| Tampered (769) | 0.00068667 | 32.8783 dB | 0.958932 | 0.00528134 |
-
-For the current final checkpoint, reconstruction-MSE ROC-AUC is **0.515382** and SSIM-error ROC-AUC is **0.570558**. The error distributions overlap substantially. These values show weak exploratory separation and do not make VAE V5 a reliable standalone forgery detector or turn reconstruction error into a tampering probability.
-
-The large notebook did not calculate a valid final V5 FID. The clean evaluation script supports opt-in FID with <code>--run-fid</code>, but the current V5 FID remains **N/A** rather than reusing the old V2 value.
-
-Although the model defines a probabilistic latent and prior-sampling path, the trained decoder depends heavily on encoder skip features. Prior-only samples generated with zero skips are nearly uniform/dark, consistent with the checkpoint's very small KL and weak use of the latent variable. V5's strong reconstruction results must therefore not be interpreted as strong unconditional generation.
-
-### Historical baselines
-
-VAE V1, V2, and authentic-only forensic results remain as historical records. Their large checkpoints are kept in the local Git-ignored `bin/checkpoints/` archive and are not used by the GUI.
-
-## 7. DCGAN
-
-### Purpose and architecture
-
-The DCGAN learns adversarial image generation from the CASIA training split. It is unconditional: authentic/tampered labels are not supplied to the generator or discriminator.
-
-The generator accepts normal random noise with shape <code>[batch, 100, 1, 1]</code>:
-
-<pre>
-100
-  → 512×4×4
-  → 256×8×8
-  → 128×16×16
-  → 64×32×32
-  → 3×64×64
-</pre>
-
-It uses transposed convolutions, BatchNorm, ReLU, and a final Tanh. The discriminator follows the reverse spatial progression with convolutions, LeakyReLU(0.2), BatchNorm except in its first block, and a final real/fake logit.
-
-| Property | Value |
-| --- | ---: |
-| Image size | 64×64 RGB |
-| Latent dimension | 100 |
-| Generator parameters | 3,576,704 |
-| Discriminator parameters | 2,765,568 |
-
-Weights use standard DCGAN initialization. Training uses BCEWithLogitsLoss and separate Adam optimizers.
-
-### Training and evaluation
-
-| Setting/result | Value |
-| --- | ---: |
-| Batch size | 64 |
-| Epochs | 30 |
-| Learning rate | 0.0002 |
-| Adam β1 / β2 | 0.5 / 0.999 |
-| Final generator loss | 3.3741 |
-| Final discriminator loss | 0.2748 |
-| Recorded GPU | Tesla T4 |
-| Recorded training time | 677.68 s |
-| FID ↓ | 169.8786 |
-| Inception Score ↑ | 2.9495 ± 0.1316 |
-
-Generator and discriminator losses represent different adversarial objectives; their magnitudes should not be ranked as though they were the same metric. The filenames use the <code>best_*</code> convention, but the current training code writes the final epoch-30 generator and discriminator states rather than selecting them using a validation metric.
-
-FID is Fréchet Inception Distance, for which lower is generally better. Inception Score rewards confident and diverse ImageNet-class predictions, but both metrics rely on ImageNet-oriented Inception features and therefore have domain limitations for CASIA forensic imagery. The current images show learned color and scene structure but limited detail and realism.
-
-## 8. Quantitative Model Comparison
-
-### Transformer V2 in the current GUI
-
-Transformer V2 converts each 128×128 RGB image into 64 non-overlapping 16×16 patches. It uses embedding dimension 256, eight attention heads, four encoder layers, two decoder layers, and feed-forward dimension 512. The supplied epoch-50 checkpoint records training MSE 0.00256850, best validation MSE 0.00206004, anomaly threshold 0.00440391, and reconstruction-error ROC-AUC 0.545534. This indicates limited separation: reconstruction error is an exploratory forensic indicator, not a tampering probability or confirmed detector.
-
-| Metric | AE | VAE V5 | DCGAN |
-| --- | ---: | ---: | ---: |
-| MSE ↓ | 0.00353242 | 0.00106170 | N/A |
-| PSNR ↑ | 25.3077 dB | 31.3124 dB | N/A |
-| SSIM ↑ | 0.761558 | 0.950181 | N/A |
-| KL | N/A | 0.00198055 | N/A |
-| FID ↓ | N/A | N/A | 169.8786 |
-| Inception Score ↑ | N/A | N/A | 2.9495 ± 0.1316 |
-
-These metrics do not define a single overall ranking because the models solve different tasks:
-
-- the AE is best suited among the current models for deterministic reconstruction;
-- VAE V5 combines skip-connected reconstruction, a probabilistic latent space, prior sampling, and exploratory anomaly analysis; and
-- DCGAN is dedicated to adversarial generation. A current V5 FID is not yet available.
-
-AE reconstruction metrics should not be compared directly with DCGAN FID or Inception Score.
-
-## 9. Streamlit GUI
-
-Run <code>app.py</code> to open five tabs:
-
-1. **Project Overview** — CASIA counts and cards explaining each generative model.
-2. **Autoencoder** — accepts JPG, JPEG, PNG, BMP, TIF, and TIFF images; reconstructs at 128×128; displays original/reconstruction, MSE, PSNR, SSIM, compression, and parameter count.
-3. **VAE V5** — reconstructs an uploaded image using deterministic <code>z=μ</code> and encoder skips, displays reconstruction metrics with an anomaly-analysis disclaimer, and can sample a synthetic image from <code>N(0,I)</code>.
-4. **Transformer V2** — accepts an uploaded image; displays its reconstruction, MSE, PSNR, SSIM, reconstruction-error indicator, saved reference threshold, and patch-attention visualization.
-5. **Model Comparison** — summarizes model objectives and metrics, with a warning that different objectives require different metrics.
-
-Models are loaded once with <code>@st.cache_resource</code>, automatically use CUDA when available, switch to evaluation mode, and perform inference without gradients. The wrappers report missing checkpoints, invalid uploads, unsupported formats, and model-load failures through readable Streamlit messages.
-
-The GUI currently loads:
-
-- <code>checkpoints/best_autoencoder.pth</code>;
-- <code>checkpoints/VAE_V5_FINAL.pth</code>;
-- <code>checkpoints/transformer_v2_final.pth</code>.
-
-All generated images are synthetic research outputs and are **not genuine forensic evidence**.
-
-## 10. Project Directory Structure
-
-The important current files are organized as follows:
-
-<pre>
-Digital_Evidence/
-├── app.py
-├── README.md
-├── requirements.txt
-├── data/
-│   └── splits/
-│       ├── train.csv
-│       ├── validation.csv
-│       └── test.csv
-├── src/
-│   ├── explore_dataset.py
-│   ├── prepare_ae_data.py
-│   ├── ae_dataset.py
-│   ├── autoencoder.py
-│   ├── train_autoencoder.py
-│   ├── evaluate_autoencoder.py
-│   ├── denoising_dataset.py
-│   ├── train_denoising_autoencoder.py
-│   ├── evaluate_denoising_autoencoder.py
-│   ├── vae.py
-│   ├── vae_legacy.py
-│   ├── train_vae.py
-│   ├── train_vae_v2.py
-│   ├── evaluate_vae.py
-│   ├── evaluate_vae_v2.py
-│   ├── dcgan.py
-│   ├── gan_dataset.py
-│   ├── train_dcgan.py
-│   ├── evaluate_dcgan.py
-│   ├── ae_inference.py
-│   ├── vae_inference.py
-│   └── gan_inference.py
-├── notebooks/
-│   ├── 01_dataset_exploration.ipynb
-│   ├── 02_autoencoder_training_colab.ipynb
-│   ├── 03_vae_training_colab.ipynb
-│   ├── 04_vae_v2_training_colab.ipynb
-│   ├── Autoencoder_CASIA_Complete_Demo.ipynb
-│   ├── VAE_CASIA_Complete_Demo.ipynb
-│   ├── GAN_CASIA_Complete_Demo.ipynb
-│   └── AI_GENERATED_IMAGE_EVIDENCE_ANALYSIS.ipynb
-├── checkpoints/
-│   ├── best_autoencoder.pth
-│   ├── best_denoising_autoencoder.pth
-│   ├── best_vae.pth
-│   ├── best_vae_v2.pth
-│   ├── best_vae_v5_forensic.pth
-│   ├── best_generator.pth
-│   └── best_discriminator.pth
-├── results/
-│   ├── dataset_summary.json
-│   ├── ae_test_metrics.json
-│   ├── dae_test_metrics.json
-│   ├── vae_test_metrics.json
-│   ├── vae_v2_test_metrics.json
-│   ├── vae_v5_test_metrics.json
-│   ├── gan_test_metrics.json
-│   └── training histories and per-image CSV files
-└── outputs/
-    ├── ae/
-    ├── vae/
-    ├── vae_v5/
-    └── gan/
-</pre>
-
-Raw CASIA data and generated output images are ignored by the current Git configuration. They may exist locally but are not guaranteed to be present in a fresh clone.
-
-## 11. Important Files
-
-| File | Role |
-| --- | --- |
-| <code>src/explore_dataset.py</code> | Discovers the real CASIA structure, validates images, writes inventory/summary results, and creates sample plots |
-| <code>src/prepare_ae_data.py</code> | Builds and validates the fixed stratified split manifests |
-| <code>src/ae_dataset.py</code> | Portable manifest-backed PyTorch dataset and data-loader factory |
-| <code>src/autoencoder.py</code> | Convolutional AE architecture |
-| <code>src/train_autoencoder.py</code> | Standard-AE training, validation, early stopping, checkpoints, and plots |
-| <code>src/evaluate_autoencoder.py</code> | Full-test AE metrics, per-image results, reconstructions, and group comparisons |
-| <code>src/denoising_dataset.py</code> | Configurable Gaussian-noise input wrapper |
-| <code>src/vae.py</code> | Final residual/skip-connected VAE V5, exact loss, and beta schedule |
-| <code>src/vae_legacy.py</code> | Historical V1/V2 architecture compatibility |
-| <code>src/train_vae.py</code> | Authentic-only VAE V5 training and validation-MSE checkpointing |
-| <code>src/train_vae_v2.py</code> | Historical KL-warm-up VAE V2 training |
-| <code>src/evaluate_vae.py</code> | VAE V5 reconstruction, group metrics, ROC-AUC, plots, generation, and optional FID |
-| <code>src/evaluate_vae_v2.py</code> | V2 evaluation and V1/V2 comparison |
-| <code>src/dcgan.py</code> | Generator, discriminator, and DCGAN weight initialization |
-| <code>src/gan_dataset.py</code> | 64×64, [-1,1] GAN data pipeline |
-| <code>src/train_dcgan.py</code> | Adversarial training, checkpoints, loss history, and fixed-noise grids |
-| <code>src/evaluate_dcgan.py</code> | FID and Inception Score evaluation |
-| <code>src/*_inference.py</code> | Cached-GUI-friendly model loading, preprocessing, metrics, and generation |
-| <code>app.py</code> | Unified Streamlit demonstration interface |
-
-Architecture and data-pipeline validation scripts also remain under <code>src/</code> for smoke testing.
-
-## 12. Installation
-
-Python dependencies are declared in <code>requirements.txt</code>.
-
-~~~bash
-python -m venv .venv
-~~~
-
-Windows PowerShell:
-
-~~~powershell
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-~~~
-
-Linux/macOS:
-
-~~~bash
-source .venv/bin/activate
-pip install -r requirements.txt
-~~~
-
-TorchMetrics and Torch-Fidelity are included for the optional VAE/DCGAN FID and Inception Score evaluations.
-
-## 13. Running the GUI
-
-From the repository root:
-
-~~~bash
-streamlit run app.py
-~~~
-
-The application automatically selects CUDA when available and otherwise uses CPU. Place the required checkpoints in <code>checkpoints/</code>. The dataset itself is not required for single-image AE/VAE inference or unconditional GAN generation.
-
-## 14. Training Models
-
-The scripts have repository-relative defaults. Run them from the repository root after preparing CASIA and the split CSVs. GPU/Colab is recommended for full training.
-
-### Dataset inventory and splits
-
-~~~bash
-python src/explore_dataset.py --dataset-root data/raw
-python src/prepare_ae_data.py
-~~~
-
-### Autoencoder
-
-~~~bash
-python src/train_autoencoder.py --max-epochs 50 --patience 4
-python src/evaluate_autoencoder.py
-~~~
-
-Use <code>--smoke-test</code> before a full AE run. The separate denoising workflow is:
-
-~~~bash
-python src/train_denoising_autoencoder.py
-python src/evaluate_denoising_autoencoder.py
-~~~
-
-### VAE
-
-~~~bash
-python src/train_vae.py
-python src/evaluate_vae.py
-~~~
-
-The current training script defaults to authentic-only VAE V5: 80 epochs, latent dimension 256, AdamW, hybrid MSE/L1 reconstruction, and a 20-epoch beta warm-up. Use <code>python src/evaluate_vae.py --run-fid</code> only when TorchMetrics/Torch-Fidelity and a suitable GPU are available. Historical V1/V2 scripts, architecture compatibility, and checkpoints remain for reference but are not used by the GUI.
-
-### DCGAN
-
-~~~bash
-python src/train_dcgan.py
-python src/evaluate_dcgan.py
-~~~
-
-The complete demo notebooks default to loading existing artifacts where their demo flags are disabled. Existing checkpoints can be used by the GUI without retraining.
-
-## 15. Evaluation Metrics
-
-| Metric | Meaning | Direction/usage |
-| --- | --- | --- |
-| MSE | Mean squared pixel reconstruction error | Lower is better; AE/VAE reconstruction |
-| PSNR | Peak signal-to-noise ratio derived from reconstruction error | Higher is better; AE/VAE reconstruction |
-| SSIM | Structural similarity between original and reconstruction | Closer to 1 is better; AE/VAE reconstruction |
-| KL | Kullback–Leibler regularization of the VAE posterior | Balance term, not a standalone image-quality ranking |
-| FID | Fréchet distance between Inception-feature distributions | Lower is generally better; VAE/DCGAN generation |
-| IS | Inception-based confidence/diversity score | Higher is generally better; DCGAN generation |
-
-Not every metric applies to every model. Reconstruction metrics and distribution-level generation metrics answer different questions.
-
-## 16. Experimental Results
-
-### Autoencoder
-
-- Best checkpoint epoch: 42
-- Best validation MSE: 0.00355497
-- Final completed-epoch train MSE: 0.00363512
-- Test MSE / PSNR / SSIM: 0.00353242 / 25.3077 dB / 0.761558
-- Recorded run: 46 epochs completed on Tesla T4 in 1,906.4 seconds
+![AE canonical reconstruction examples](docs/results/ae_reconstruction_examples.png)
 
 ### VAE V5 Final
 
-- Current checkpoint metadata: epoch 79, validation MSE 0.000978699, PSNR 30.093507 dB, KL 0.00867804
-- Canonical test MSE / PSNR / SSIM: 0.00070007 / 32.9535 dB / 0.961139
-- Test KL / hybrid total loss: 0.01292955 / 0.00889963
-- Reconstruction-MSE / SSIM-error ROC-AUC: 0.515382 / 0.570558
-- FID: N/A; the source notebook did not contain a valid final V5 calculation
+- Input: `3 × 128 × 128`
+- Latent dimension: 256, with learned `mu` and `logvar`
+- Parameters: 17,599,971
+- Active checkpoint: `checkpoints/VAE_V5_FINAL.pth`
+- Checkpoint epoch: 79
+- Reconstruction loss: `0.5 × MSE + 0.5 × L1`
+- Total loss: reconstruction loss plus beta-weighted KL
+- KL beta warm-up: 0.00005 to 0.00030 over 20 epochs
 
-### DCGAN
+The Review-2 inference path encodes the uploaded image once and calculates:
 
-- Final epoch: 30
-- Final generator/discriminator loss: 3.3741 / 0.2748
-- FID: 169.8786
-- Inception Score: 2.9495 ± 0.1316
-- Recorded run: Tesla T4, 677.68 seconds
+```text
+std = exp(0.5 × logvar)
+z = mu + temperature × std × epsilon,  epsilon ~ N(0, I)
+```
 
-The JSON and CSV files under <code>results/</code> retain more precision, full histories, and per-image reconstruction measurements.
+Every stochastic decode reuses the same image-conditioned skip tensors. Samples are seed-reproducible and are presented as probabilistic latent reconstructions—not new forensic facts. A five-image CPU smoke measurement at temperature 1.0 produced a mean absolute pixel delta of 0.001197 from the deterministic reconstruction (range 0.000259–0.003526 across 15 samples). This confirms real stochastic behavior while documenting that strong skip connections often make the visual differences subtle.
 
-## 17. Visual Results
+Prior-only generation is retained as a separate limitation demonstration; it can be dark/weak because the trained decoder relies heavily on encoder skips.
 
-Selected locally generated artifacts are shown below.
+![VAE image-conditioned stochastic reconstructions](docs/results/vae_stochastic_variations.png)
 
-### Autoencoder reconstruction
+### Vision Transformer V2
 
-![Autoencoder original and reconstructed test images](outputs/ae/test_reconstruction_grid.png)
+- Input: `3 × 128 × 128`
+- Patches: 64 non-overlapping `16 × 16` tokens
+- Embedding dimension: 256
+- Attention heads: 8
+- Encoder/decoder layers: 4/2
+- Feed-forward dimension: 512
+- Parameters: 3,591,168
+- Active checkpoint: `checkpoints/transformer_v2_final.pth`
+- Checkpoint epoch: 50
 
-### VAE V5 reconstruction
+`src/evaluate_transformer_v2.py` performed the full canonical evaluation. The checkpoint's 0.00206004 value remains correctly identified as validation MSE; it is not used as a test metric.
 
-![VAE V5 authentic and tampered reconstruction examples](outputs/vae_v5/reconstruction_grid.png)
+![Vision Transformer reconstruction and attention](docs/results/vision_transformer_example.png)
 
-### DCGAN final generated samples
+Attention shows learned patch relationships and must not be interpreted as definitive manipulation localization.
 
-![DCGAN final synthetic samples](outputs/gan/final_generated_samples.png)
+### Evidence Intelligence Transformer
 
-Additional available plots include:
+The text module is separate from the trained Vision Transformer. Its flow is:
 
-- AE training, denoising, and authentic-versus-tampered comparisons under <code>outputs/ae/</code>;
-- current VAE V5 reconstruction, generated samples, error distributions, and ROC curves under <code>outputs/vae_v5/</code>, with historical VAE artifacts under <code>outputs/vae/</code>; and
-- DCGAN loss curves and fixed-noise samples from epochs 5, 10, 15, 20, 25, and 30 under <code>outputs/gan/</code>.
+```text
+TXT / digitally extractable PDF
+  → validated in-memory extraction
+  → token-aware chunks
+  → tokenizer
+  → pretrained google/flan-t5-small
+  → evidence-oriented generated output
+```
 
-Because <code>outputs/</code> is currently ignored by Git, these embedded images render only where the files are present (or if selected artifacts are later force-added to version control).
+Features include:
 
-## 18. Known Issues and Limitations
+- pasted UTF-8 text, `.txt`, and digitally extractable `.pdf` inputs;
+- clear scanned/image-only PDF error when no digital text is found;
+- six-line default analyst prompt;
+- token-aware chunking with processed/truncated counts;
+- configurable model through `EVIDENCE_MODEL_ID`;
+- deterministic beam generation on CPU or CUDA;
+- no API key for the core path; and
+- a mandatory limitation/responsible-use note in every generated result.
 
-### Technical limitations
+The default model is deliberately small for CPU/Streamlit portability, so output may be terse or extractive. It is a pretrained integration, not a language model trained from scratch by the team. A real local demo output and its measured runtime metadata are stored in `docs/results/evidence_transformer_demo.md`.
 
-- CASIA raw data and generated outputs are ignored by Git, so a fresh clone requires dataset setup and may not display the embedded README images.
-- <code>notebooks/01_dataset_exploration.ipynb</code> currently contains no notebook cells; the working exploration implementation and records are the Python script, inventory CSV, and summary JSON.
-- The GUI comparison table contains older AE values (MSE 0.00413435, PSNR 24.5603, SSIM 0.725357), while the latest evaluation files report the improved values documented here.
-- <code>notebooks/02_autoencoder_training_colab.ipynb</code> retains the earlier 20-epoch experiment; the current final 50-epoch-configured run is documented in the complete AE demo notebook and latest history/checkpoint.
-- The V5 source notebook used a 1,893-image test set and its stored best-run metadata differs from the supplied checkpoint; the clean project evaluation instead uses the canonical 1,892-image split and reports both provenance records.
-- GAN checkpoints created in Colab contain platform-specific path metadata. <code>src/gan_inference.py</code> includes a compatibility mapping for local GUI loading, while direct local use of <code>src/evaluate_dcgan.py</code> may require a matching Python environment or equivalent compatibility handling.
+## Streamlit application
 
-### Model limitations
+The professional GUI has eight pages:
 
-- VAE V5 reconstructs strongly through encoder skip connections, but its MSE ROC-AUC of 0.515382 provides almost no useful authentic/tampered ranking by MSE alone.
-- The V5 decoder was trained with image skip features. Prior generation has no source-image skips, uses zero-valued skips, and currently produces visually degenerate dark samples; reconstruction quality and generation quality must not be conflated.
-- A valid final V5 FID is not currently available.
-- DCGAN samples capture coarse visual structure but have limited sharpness and realism. Final loss behavior is consistent with a comparatively strong discriminator, although generator and discriminator losses cannot be compared directly.
-- The AE, VAE, and DCGAN are not trained as validated tampering detectors.
-- CASIA is the only dataset used by the generative modules, limiting evidence of cross-dataset generalization.
-- The current implementation does not yet provide Transformer, Diffusion, or integrated forensic-intelligence generation.
+1. Project Overview
+2. Autoencoder
+3. Variational Autoencoder
+4. Vision Transformer
+5. Evidence Intelligence Transformer
+6. Model Evaluation
+7. Privacy & Ethical AI
+8. Project Information
 
-### Evaluation limitations
+The three image pages support normal uploads and a reproducible 24-image canonical test selector (12 authentic and 12 tampered) when local CASIA data is available. Model loading is cached, CPU fallback is automatic, and missing files/LFS pointers produce actionable errors.
 
-- AE/VAE authentic-versus-tampered reconstruction differences are exploratory and do not establish per-image classification capability.
-- FID and Inception Score do not demonstrate forensic usefulness, authenticity, or evidential validity.
-- ImageNet-based Inception features may not align well with CASIA's forensic domain.
-- All results describe this dataset, split, implementation, and checkpoint configuration; external validity has not been established.
-- This is an academic prototype, not a production or legally validated forensic system.
+Privacy-oriented controls include:
 
-## 19. Problems Encountered and Solutions
+- authorization/consent before evidence input;
+- allowlisted extensions and 10 MB limits;
+- Pillow/PDF content validation;
+- in-memory/session processing with no automatic permanent evidence save by project code;
+- explicit session evidence cleanup;
+- visible model, token, truncation, and limitation information; and
+- deployment guidance for HTTPS, authentication, access control, logs, region, retention, and governance.
 
-Repository artifacts support the following development history:
+Run from the repository root:
 
-| Problem/context | Implemented response |
+```powershell
+streamlit run app.py
+```
+
+## Installation
+
+Python 3.10+ is supported.
+
+Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+Linux/macOS:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+The first evidence-language-model run downloads public FLAN-T5 weights from Hugging Face unless the model is already cached. No API key is required. Set `EVIDENCE_MODEL_ID` to another local or compatible Hugging Face seq2seq model if needed.
+
+## Checkpoints and Git LFS
+
+`checkpoints/VAE_V5_FINAL.pth` is managed by Git LFS and is approximately 211 MB. GitHub source ZIP files may contain only a small text pointer instead of model bytes. Clone/fetch with LFS:
+
+```powershell
+git lfs install
+git lfs pull --include="checkpoints/VAE_V5_FINAL.pth"
+```
+
+The active inference wrappers inspect checkpoint headers before calling `torch.load`. If a pointer is found, the error reports the expected size and exact LFS fetch command.
+
+Checkpoint locations can be overridden without editing code:
+
+| Environment variable | Default |
 | --- | --- |
-| Ground-truth PNG masks could be confused with model inputs | Inventory-based class discovery, explicit exclusion, and zero-leakage assertions |
-| Local Windows paths did not transfer cleanly to Colab | Split manifests use relative paths and reconstruct paths from a configurable dataset root |
-| CPU full training was impractical | Smoke tests were run locally and full experiments were executed on a Tesla T4 in Colab |
-| Baseline VAE reconstruction was weak | VAE V5 added residual blocks, GroupNorm/SiLU, skip-connected decoding, a hybrid MSE/L1 loss, and a 20-epoch KL warm-up |
-| Multiple VAE experiments and conflicting notebook outputs | V1/V2 artifacts are retained as historical baselines; V5 uses separate paths and runtime evaluation trusts the supplied checkpoint plus canonical manifests |
-| GUI checkpoint loading across Colab/local Python path classes | GAN inference adds a restricted compatibility mapping during checkpoint loading |
-| Three model families require different interactions | The Streamlit interface uses dedicated inference wrappers and task-specific tabs |
+| `AE_CHECKPOINT_PATH` | `checkpoints/best_autoencoder_rtx80_portable.pth` |
+| `VAE_CHECKPOINT_PATH` | `checkpoints/VAE_V5_FINAL.pth` |
+| `VISION_TRANSFORMER_CHECKPOINT_PATH` | `checkpoints/transformer_v2_final.pth` |
 
-The auxiliary classifier notebook also contains DataLoader multiprocessing cleanup assertions in stored output. It is separate from the generative modules and has no corresponding classifier checkpoint in this repository.
+Current local audit found real bytes for all active checkpoints. Historical AE, denoising, GAN, and VAE assets are preserved; no working checkpoint was overwritten or deleted.
 
-## 20. Model Checkpoints
+## Reproducible evaluation and artifacts
 
-| Checkpoint | Purpose | Current GUI use |
-| --- | --- | --- |
-| <code>checkpoints/best_autoencoder.pth</code> | Standard AE, best validation checkpoint at epoch 42 | Yes |
-| <code>checkpoints/best_denoising_autoencoder.pth</code> | Gaussian-noise denoising AE experiment | No |
-| <code>checkpoints/best_vae.pth</code> | Fixed-β VAE V1 baseline | No |
-| <code>checkpoints/best_vae_v2.pth</code> | Historical KL-warm-up VAE V2, best epoch 43 | No |
-| <code>checkpoints/VAE_V5_FINAL.pth</code> | Current mixed-data VAE V5 Final reconstruction checkpoint | **Yes** |
-| <code>checkpoints/transformer_v2_final.pth</code> | Current Transformer Forensic Autoencoder V2 | **Yes** |
-| <code>checkpoints/best_generator.pth</code> | Preserved trained DCGAN generator | No |
-| <code>checkpoints/best_discriminator.pth</code> | Preserved trained DCGAN discriminator | No |
+From the repository root:
 
-The repository also contains a duplicate denoising checkpoint under <code>results/</code>; the canonical inference path is the checkpoint-directory file shown above.
+```powershell
+python src/evaluate_autoencoder.py
+python src/evaluate_vae.py
+python src/evaluate_transformer_v2.py
+python src/build_model_comparison.py
+python src/generate_review2_artifacts.py --include-text
+```
 
-## 21. Current Review Deliverables
+The full evaluators require the local CASIA data referenced by `data/splits/`. Selected presentation assets are committed under `docs/results/`; bulk outputs remain ignored.
 
-Ready for faculty review:
+![Canonical image-model comparison](docs/results/image_model_comparison.png)
 
-- verified CASIA inventory and fixed train/validation/test manifests;
-- modular PyTorch data pipelines;
-- trained standard and denoising AEs;
-- historical VAE baselines and the current mixed-data VAE V5 Final;
-- trained DCGAN generator and discriminator;
-- full-test reconstruction results and per-image CSVs;
-- VAE/DCGAN distribution-level generation metrics;
-- saved model checkpoints, histories, plots, and sample grids;
-- complete AE, VAE, and GAN faculty-demo notebooks; and
-- a unified AE/VAE/Transformer Streamlit inference and comparison dashboard.
+## Validation
 
-The auxiliary ResNet-18 notebook is preserved as a separate exploratory classifier and is not presented as a completed generative-model deliverable.
+Fast local validation:
 
-## 22. Future Work
+```powershell
+python -m compileall -q app.py src tests
+python -m unittest discover -s tests -v
+```
 
-The implementation roadmap is explicitly separated from current functionality:
+Review-2 validation performed for this build includes:
 
-1. **Current phase:** AE, denoising AE, VAE, Transformer V2, evaluations, notebooks, and GUI; DCGAN remains preserved outside the GUI.
-2. **Future phase:** Diffusion-based image-generation experiment.
-3. **Future phase:** integrated multi-model digital-evidence analysis and richer intelligence generation.
+- all source syntax compilation;
+- parser/chunking/checkpoint unit tests;
+- real AE, VAE, Vision Transformer, and FLAN-T5 CPU inference;
+- exact canonical manifest/path/count validation;
+- full 1,892-image Vision Transformer evaluation; and
+- Streamlit smoke tests for every page plus real canonical-demo inference paths.
 
-Potential model improvements include stronger VAE encoders/decoders, carefully validated perceptual or hybrid reconstruction losses, improved GAN stabilization, higher output resolution, cross-dataset validation, domain-aware alternatives to generic Inception metrics, forensic feature analysis, and calibrated comparisons with future Transformer/Diffusion modules.
+## Repository layout
 
-## 23. Responsible Use and Disclaimer
+```text
+app.py                         Unified Streamlit interface
+src/
+  autoencoder.py              Final convolutional AE architecture
+  vae.py                      VAE V5 architecture, loss, beta schedule
+  transformer.py              Vision Transformer V2 architecture
+  *_inference.py              Cached-GUI-friendly image inference
+  document_parser.py          Safe TXT/PDF extraction
+  evidence_transformer.py     Pretrained language Transformer wrapper
+  evaluate_transformer_v2.py Canonical Vision Transformer evaluation
+  build_model_comparison.py   Verified same-split comparison builder
+  generate_review2_artifacts.py Reproducible selected artifacts
+tests/                         Focused unit/smoke tests
+data/splits/                   Fixed portable manifests
+checkpoints/                   Active and preserved trained weights
+results/                       Verified metrics and per-image records
+docs/results/                  Small presentation-ready result set
+notebooks/                     Preserved training/demo notebooks
+```
 
-This repository is an academic research prototype. Generated VAE and DCGAN images are synthetic outputs, not genuine forensic evidence. Reconstruction errors, latent variables, FID, Inception Score, and visual examples must not be used alone to decide whether evidence is authentic, tampered, admissible, or attributable to a person. The system has not been validated for production investigations or legal decision-making.
+## Preserved and future scope
 
-## 24. Technologies Used
-
-- Python
-- PyTorch and Torchvision
-- NumPy and Pandas
-- Pillow
-- scikit-image and scikit-learn
-- Matplotlib
-- Streamlit
-- Jupyter Notebook / Google Colab
-- KaggleHub
-- TorchMetrics and Torch-Fidelity for generation evaluation
-
-## 25. Team and Academic Context
-
-This is a Semester 7 Generative AI course project titled **“Multi-Model Generative AI Framework for Digital Evidence Analysis and Intelligence Generation.”** The repository does not currently contain verified team-member names, institutional details, or role assignments, so none are attributed here. Those details can be added when confirmed.
+- GAN code, notebook, checkpoints, training history, and evaluation results are preserved for the later 60-mark phase. GAN is not in the Review-2 GUI.
+- Historical VAE and denoising experiments remain available but are not presented as the current final models.
+- Diffusion remains future work and is not claimed as implemented.
+- Cross-dataset validation, calibrated tampering classifiers, OCR for scanned PDFs, and production governance remain outside the verified Review-2 scope.

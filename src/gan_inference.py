@@ -8,6 +8,7 @@ import numpy as np
 import torch
 
 from dcgan import DCGANDiscriminator, DCGANGenerator
+from checkpoint_utils import validate_checkpoint_file
 
 
 def _load_colab_checkpoint(path: Path, device: torch.device) -> dict[str, object]:
@@ -26,8 +27,8 @@ class GANInference:
         device: torch.device, latent_dim: int = 100,
     ) -> None:
         generator_path, discriminator_path = Path(generator_path), Path(discriminator_path)
-        for name, path in (("generator", generator_path), ("discriminator", discriminator_path)):
-            if not path.is_file(): raise FileNotFoundError(f"GAN {name} checkpoint not found: {path}")
+        generator_path = validate_checkpoint_file(generator_path, "GAN generator")
+        discriminator_path = validate_checkpoint_file(discriminator_path, "GAN discriminator")
         self.device, self.latent_dim = device, latent_dim
         self.generator = DCGANGenerator(latent_dim).to(device)
         self.discriminator = DCGANDiscriminator().to(device)

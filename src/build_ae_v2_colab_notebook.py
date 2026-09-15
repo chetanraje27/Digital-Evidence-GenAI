@@ -272,6 +272,7 @@ notebook = {
     "nbformat": 4, "nbformat_minor": 5,
 }
 target = Path(__file__).resolve().parents[1] / "notebooks" / "AE" / "02_autoencoder_training_colab.ipynb"
-target.parent.mkdir(parents=True, exist_ok=True)
-target.write_text(json.dumps(notebook, indent=1), encoding="utf-8")
-print(target)
+if __name__ == "__main__":
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(notebook, indent=1), encoding="utf-8")
+    print(target)

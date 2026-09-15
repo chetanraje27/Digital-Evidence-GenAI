@@ -1,0 +1,43 @@
+{
+  "comparison_scope": "Same canonical held-out CASIA test split",
+  "test_images_per_model": 1892,
+  "metric_interpretation": "MSE, PSNR, and SSIM measure reconstruction fidelity; they are not tampering verdicts.",
+  "models": [
+    {
+      "model": "Autoencoder RTX-80 Final",
+      "primary_role": "Deterministic reconstruction and compression",
+      "test_images": 1892,
+      "mse": 0.0030319858478006527,
+      "psnr_db": 26.015853145688187,
+      "ssim": 0.7929105853335046,
+      "parameters": 265571,
+      "checkpoint_epoch": 76,
+      "evaluation_seconds": 303.8882567999972,
+      "source_result": "results/ae_rtx80_test_metrics.json"
+    },
+    {
+      "model": "VAE V5 Final",
+      "primary_role": "Probabilistic latent representation and reconstruction",
+      "test_images": 1892,
+      "mse": 0.0007000720501498279,
+      "psnr_db": 32.95345649305912,
+      "ssim": 0.9611388501921869,
+      "parameters": 17599971,
+      "checkpoint_epoch": 79,
+      "evaluation_seconds": 84.74977929999977,
+      "source_result": "results/vae_v5_final_test_metrics.json"
+    },
+    {
+      "model": "Vision Transformer V2",
+      "primary_role": "Patch-token self-attention reconstruction",
+      "test_images": 1892,
+      "mse": 0.002207326311833138,
+      "psnr_db": 27.265186171767947,
+      "ssim": 0.8448639925388151,
+      "parameters": 3591168,
+      "checkpoint_epoch": 50,
+      "evaluation_seconds": 50.861607800005004,
+      "source_result": "results/transformer_v2_test_metrics.json"
+    }
+  ]
+}

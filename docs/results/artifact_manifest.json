@@ -1,0 +1,28 @@
+{
+  "generated_by": "src/generate_review2_artifacts.py",
+  "source_test_images": [
+    "data/raw/CASIA2/Au/Au_ani_00004.jpg",
+    "data/raw/CASIA2/Tp/Tp_D_CNN_M_B_nat10139_nat00059_11949.jpg"
+  ],
+  "vae_source_test_image": "data/raw/CASIA2/Au/Au_ani_00027.jpg",
+  "device": "cpu",
+  "vae_sampling": {
+    "temperature": 2.0,
+    "seed": 42,
+    "samples": 3
+  },
+  "note": "Metrics and images were generated from repository checkpoints and canonical test data. The fixed VAE example demonstrates posterior sensitivity and is not a population summary.",
+  "text_demo": {
+    "output": "EVIDENCE CHUNK 1 OF 1: At 09:15 on 12 March 2026, analyst Mira Patel collected device EX-17. The transfer log records SHA-256 abc123. A later note states that collection began at 10:15, but no timezone is recorded.\n\nLimitation and responsible-use note: Research/educational use only. Verify every observation against the original evidence. Generated text may contain errors and must not be used as the sole legal or forensic basis.",
+    "model_id": "google/flan-t5-small",
+    "input_characters": 191,
+    "input_tokens": 52,
+    "processed_tokens": 52,
+    "output_tokens": 107,
+    "chunks_processed": 1,
+    "chunks_available": 1,
+    "truncated": false,
+    "inference_seconds": 2.8415492000058293,
+    "max_new_tokens": 128
+  }
+}

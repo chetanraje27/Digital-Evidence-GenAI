@@ -1,0 +1,60 @@
+{
+  "model": "Transformer Forensic Autoencoder V2",
+  "checkpoint": "checkpoints/transformer_v2_final.pth",
+  "checkpoint_metadata": {
+    "epoch": 50,
+    "train_mse": 0.002568504736168174,
+    "validation_mse": 0.002060044957842264,
+    "anomaly_threshold": 0.004403905477374792,
+    "roc_auc": 0.5455342572711303,
+    "balanced_accuracy": 0.5189540850630056,
+    "image_size": 128,
+    "patch_size": 16,
+    "num_patches": 64,
+    "embed_dim": 256,
+    "num_heads": 8,
+    "encoder_layers": 4,
+    "decoder_layers": 2,
+    "ff_dim": 512
+  },
+  "test_images": 1892,
+  "authentic_images": 1123,
+  "tampered_images": 769,
+  "parameter_count": 3591168,
+  "standard_deviation_definition": "population standard deviation (ddof=0)",
+  "overall": {
+    "count": 1892,
+    "mse_mean": 0.002207326311833138,
+    "mse_std": 0.001313394068107866,
+    "psnr_mean": 27.265186171767947,
+    "psnr_std": 2.537972559450995,
+    "ssim_mean": 0.8448639925388151,
+    "ssim_std": 0.05139750854577819
+  },
+  "authentic": {
+    "count": 1123,
+    "mse_mean": 0.0021225826349498154,
+    "mse_std": 0.0012343361627214905,
+    "psnr_mean": 27.416874792809704,
+    "psnr_std": 2.510193839315496,
+    "ssim_mean": 0.8478376561259968,
+    "ssim_std": 0.05044322012926406
+  },
+  "tampered": {
+    "count": 769,
+    "mse_mean": 0.0023310807320411635,
+    "mse_std": 0.0014118569727470693,
+    "psnr_mean": 27.04366949890723,
+    "psnr_std": 2.561917068984014,
+    "ssim_mean": 0.8405214383016172,
+    "ssim_std": 0.05245813945404195
+  },
+  "exploratory_roc_auc": {
+    "mse": 0.5412992553153302,
+    "interpretation": "Exploratory ranking only; reconstruction error is not a calibrated tampering probability or standalone detector."
+  },
+  "device": "cpu",
+  "model_inference_seconds": 13.454775099875405,
+  "evaluation_seconds": 50.861607800005004,
+  "interpretation_note": "MSE, PSNR, and SSIM measure reconstruction fidelity. Attention and reconstruction error are not proof or definitive localization of manipulation."
+}
