@@ -1,0 +1,21 @@
+{
+  "architecture": "quality_residual_ae_v1",
+  "compression_ratio": 6,
+  "latent_shape": [
+    32,
+    16,
+    16
+  ],
+  "parameter_count": 2371715,
+  "device": "cuda",
+  "gpu": "Tesla T4",
+  "epochs_completed": 80,
+  "best_epoch": 79,
+  "best_validation_ssim": 0.942673691483431,
+  "best_validation_mse": 0.0009579012228518598,
+  "selection_metric": "validation_ssim",
+  "early_stopping_triggered": false,
+  "training_time_seconds": 4367.662298161,
+  "checkpoint_path": "/content/Digital-Evidence-GenAI/checkpoints/best_quality_autoencoder_v1.pth",
+  "smoke_test": false
+}

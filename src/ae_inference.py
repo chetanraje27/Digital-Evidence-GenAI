@@ -1,4 +1,4 @@
-"""Reusable inference wrapper for the trained convolutional Autoencoder."""
+"""Reusable inference wrapper for standard and quality Autoencoder checkpoints."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from skimage.metrics import structural_similarity
 
 from autoencoder import ConvolutionalAutoencoder
 from checkpoint_utils import validate_checkpoint_file
+from quality_autoencoder import ARCHITECTURE_NAME, QualityAutoencoder
 
 
 def _state_dict(checkpoint: object) -> dict[str, torch.Tensor]:
@@ -44,9 +45,20 @@ class AutoencoderInference:
     def __init__(self, checkpoint_path: str | Path, device: torch.device) -> None:
         path = validate_checkpoint_file(checkpoint_path, "Autoencoder")
         self.device = device
-        self.model = ConvolutionalAutoencoder().to(device)
         checkpoint = torch.load(path, map_location=device, weights_only=True)
-        self.model.load_state_dict(_state_dict(checkpoint)); self.model.eval()
+        architecture = checkpoint.get("architecture") if isinstance(checkpoint, dict) else None
+        if architecture == ARCHITECTURE_NAME:
+            self.model = QualityAutoencoder().to(device)
+        elif architecture in (None, "standard_convolutional_ae"):
+            self.model = ConvolutionalAutoencoder().to(device)
+        else:
+            raise ValueError(f"Unsupported Autoencoder architecture: {architecture}")
+        self.architecture = architecture or "standard_convolutional_ae"
+        self.compression_ratio = int(
+            checkpoint.get("compression_ratio", 24) if isinstance(checkpoint, dict) else 24
+        )
+        self.model.load_state_dict(_state_dict(checkpoint), strict=True)
+        self.model.eval()
 
     def reconstruct(self, image: Image.Image) -> tuple[Image.Image, np.ndarray, dict[str, float]]:
         original_image, tensor = preprocess_image(image, 128)

@@ -1,4 +1,4 @@
-"""Evaluate the trained standard Autoencoder on the held-out CASIA test split."""
+"""Evaluate a supported Autoencoder checkpoint on the held-out CASIA test split."""
 
 from __future__ import annotations
 
@@ -209,30 +209,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--checkpoint-path",
         type=Path,
-        default=Path("checkpoints/best_autoencoder_rtx80_portable.pth"),
+        default=Path("checkpoints/best_quality_autoencoder_v1.pth"),
     )
     parser.add_argument(
         "--per-image-csv",
         type=Path,
-        default=Path("results/ae_rtx80_test_per_image_metrics.csv"),
+        default=Path("results/quality_ae_v1_test_per_image_metrics.csv"),
     )
     parser.add_argument(
-        "--metrics-json", type=Path, default=Path("results/ae_rtx80_test_metrics.json")
+        "--metrics-json", type=Path, default=Path("results/quality_ae_v1_test_metrics.json")
     )
     parser.add_argument(
         "--reconstruction-grid",
         type=Path,
-        default=Path("outputs/ae_rtx80/test_reconstruction_grid.png"),
+        default=Path("outputs/quality_ae_v1/test_reconstruction_grid.png"),
     )
     parser.add_argument(
         "--mse-plot",
         type=Path,
-        default=Path("outputs/ae_rtx80/authentic_vs_tampered_mse.png"),
+        default=Path("outputs/quality_ae_v1/authentic_vs_tampered_mse.png"),
     )
     parser.add_argument(
         "--ssim-plot",
         type=Path,
-        default=Path("outputs/ae_rtx80/authentic_vs_tampered_ssim.png"),
+        default=Path("outputs/quality_ae_v1/authentic_vs_tampered_ssim.png"),
     )
     parser.add_argument("--image-size", type=int, default=128)
     parser.add_argument("--batch-size", type=int, default=32)

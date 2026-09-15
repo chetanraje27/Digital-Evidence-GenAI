@@ -40,7 +40,7 @@ def selected_test_rows() -> list[pd.Series]:
 
 def save_ae_examples(output_dir: Path, device: torch.device) -> list[str]:
     model = AutoencoderInference(
-        ROOT / "checkpoints" / "best_autoencoder_rtx80_portable.pth", device
+        ROOT / "checkpoints" / "best_quality_autoencoder_v1.pth", device
     )
     rows = selected_test_rows()
     figure, axes = plt.subplots(2, 2, figsize=(8, 7))
@@ -57,7 +57,7 @@ def save_ae_examples(output_dir: Path, device: torch.device) -> list[str]:
         )
         axes[index, 0].axis("off")
         axes[index, 1].axis("off")
-    figure.suptitle("Autoencoder RTX-80 — Canonical Test Examples", fontweight="bold")
+    figure.suptitle("Quality Autoencoder V1 — Canonical Test Examples", fontweight="bold")
     figure.tight_layout()
     figure.savefig(output_dir / "ae_reconstruction_examples.png", dpi=160, bbox_inches="tight")
     plt.close(figure)
@@ -177,6 +177,8 @@ def generate(include_text: bool) -> None:
     manifest: dict[str, object] = {
         "generated_by": "src/generate_review2_artifacts.py",
         "source_test_images": sources,
+        "autoencoder_checkpoint": "checkpoints/best_quality_autoencoder_v1.pth",
+        "autoencoder_metrics": "results/quality_ae_v1_test_metrics.json",
         "vae_source_test_image": vae_source.relative_to(ROOT).as_posix(),
         "device": str(device),
         "vae_sampling": {"temperature": 2.0, "seed": 42, "samples": 3},

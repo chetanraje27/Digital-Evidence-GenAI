@@ -1,0 +1,36 @@
+{
+  "number_of_test_images": 1892,
+  "number_authentic": 1123,
+  "number_tampered": 769,
+  "architecture": "quality_residual_ae_v1",
+  "compression_ratio": 6,
+  "checkpoint_epoch": 79,
+  "checkpoint_validation_loss": 0.02957003040684202,
+  "standard_deviation_definition": "population standard deviation (ddof=0)",
+  "overall": {
+    "mse_mean": 0.000946025942760688,
+    "mse_std": 0.0006841263910980835,
+    "psnr_mean": 31.19508006766438,
+    "psnr_std": 2.9606091468448605,
+    "ssim_mean": 0.9386538375822737,
+    "ssim_std": 0.03064770701115437
+  },
+  "authentic": {
+    "mse_mean": 0.0009128778618563962,
+    "mse_std": 0.0006635129799451139,
+    "psnr_mean": 31.370090391223172,
+    "psnr_std": 3.007534718132934,
+    "ssim_mean": 0.9412078580363775,
+    "ssim_std": 0.030296187269604716
+  },
+  "tampered": {
+    "mse_mean": 0.0009944333482945235,
+    "mse_std": 0.0007103860996989487,
+    "psnr_mean": 30.939505824027812,
+    "psnr_std": 2.8716162711832762,
+    "ssim_mean": 0.9349241042013131,
+    "ssim_std": 0.030775477501044035
+  },
+  "interpretation_note": "Authentic/tampered results are exploratory reconstruction comparisons only; the Autoencoder and reconstruction error are not proof of forgery.",
+  "evaluation_time_seconds": 18.427418354999645
+}

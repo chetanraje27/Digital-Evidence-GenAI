@@ -18,24 +18,24 @@ def read_json(path: Path) -> dict[str, object]:
 
 def build_comparison(results_dir: Path) -> list[dict[str, object]]:
     """Read measured artifacts and normalize only compatible test metrics."""
-    ae = read_json(results_dir / "ae_rtx80_test_metrics.json")
+    ae = read_json(results_dir / "quality_ae_v1_test_metrics.json")
     vae = read_json(results_dir / "vae_v5_final_test_metrics.json")
     transformer = read_json(results_dir / "transformer_v2_test_metrics.json")
-    ae_architecture = read_json(results_dir / "ae_architecture_summary.json")
+    ae_architecture = read_json(results_dir / "quality_ae_v1_training_summary.json")
     vae_architecture = read_json(results_dir / "vae_v5_architecture_summary.json")
 
     rows = [
         {
-            "model": "Autoencoder RTX-80 Final",
+            "model": "Quality Autoencoder V1",
             "primary_role": "Deterministic reconstruction and compression",
             "test_images": int(ae["number_of_test_images"]),
             "mse": float(ae["overall"]["mse_mean"]),
             "psnr_db": float(ae["overall"]["psnr_mean"]),
             "ssim": float(ae["overall"]["ssim_mean"]),
-            "parameters": int(ae_architecture["total_parameters"]),
+            "parameters": int(ae_architecture["parameter_count"]),
             "checkpoint_epoch": int(ae["checkpoint_epoch"]),
             "evaluation_seconds": float(ae["evaluation_time_seconds"]),
-            "source_result": "results/ae_rtx80_test_metrics.json",
+            "source_result": "results/quality_ae_v1_test_metrics.json",
         },
         {
             "model": "VAE V5 Final",

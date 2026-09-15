@@ -54,9 +54,8 @@ def configured_checkpoint(environment_name: str, default_path: str) -> Path:
 
 @st.cache_resource(show_spinner="Loading Autoencoder…")
 def load_ae():
-    # Same architecture, using the improved epoch-76 checkpoint from the RTX-80 run.
     return AutoencoderInference(
-        configured_checkpoint("AE_CHECKPOINT_PATH", "checkpoints/best_autoencoder_rtx80_portable.pth"),
+        configured_checkpoint("AE_CHECKPOINT_PATH", "checkpoints/best_quality_autoencoder_v1.pth"),
         DEVICE,
     )
 
@@ -278,7 +277,7 @@ if page == "Project Overview":
         column.metric(label, value)
     st.markdown("### Current model modules")
     cards = st.columns(4, gap="large")
-    cards[0].markdown('<div class="model-card"><span class="tag">Deterministic</span><h3>Autoencoder</h3><p>Compact-bottleneck reconstruction, compression, and denoising experiments.</p></div>', unsafe_allow_html=True)
+    cards[0].markdown('<div class="model-card"><span class="tag">Deterministic</span><h3>Quality Autoencoder</h3><p>Residual high-fidelity reconstruction through a genuine 6Ã— latent bottleneck.</p></div>', unsafe_allow_html=True)
     cards[1].markdown('<div class="model-card"><span class="tag">Probabilistic</span><h3>VAE V5 Final</h3><p>256-dimensional probabilistic representation with high-quality skip-connected reconstruction.</p></div>', unsafe_allow_html=True)
     cards[2].markdown('<div class="model-card"><span class="tag">Attention</span><h3>Transformer V2</h3><p>Patch-token reconstruction with interpretable learned attention relationships.</p></div>', unsafe_allow_html=True)
     cards[3].markdown('<div class="model-card"><span class="tag">Pretrained SLM</span><h3>Evidence Intelligence</h3><p>Token-aware assistance for pasted text and digitally extractable PDF evidence.</p></div>', unsafe_allow_html=True)
@@ -292,13 +291,13 @@ if page == "Project Overview":
 
 
 elif page == "Autoencoder":
-    heading("Model 01 · deterministic reconstruction", "Convolutional Autoencoder — RTX-80 Final", "Examine reconstruction fidelity from the improved 80-epoch training run after a meaningful 24× dimensional bottleneck. Metrics compare input and reconstruction; the model does not predict a label.")
+    heading("Model 01 · deterministic reconstruction", "Quality Autoencoder V1", "Examine high-fidelity deterministic reconstruction from a residual Autoencoder with a genuine 6× latent bottleneck. Metrics compare input and reconstruction; the model does not predict a label.")
     info = st.columns(4)
-    for column, label, value in zip(info, ["Input", "Latent", "Compression", "Parameters"], ["3×128×128", "32×8×8", "24×", "265,571"]):
+    for column, label, value in zip(info, ["Input", "Latent", "Compression", "Parameters"], ["3×128×128", "32×16×16", "6×", "2,371,715"]):
         column.metric(label, value)
-    st.markdown('<div class="workflow">RGB image → convolutional encoder → compact latent → decoder → reconstruction</div>', unsafe_allow_html=True)
+    st.markdown('<div class="workflow">RGB image → residual encoder → 6× latent bottleneck → resize-convolution decoder → reconstruction</div>', unsafe_allow_html=True)
     st.markdown("#### Verified canonical test result")
-    verified_test_cards("ae_rtx80_test_metrics.json", "number_of_test_images")
+    verified_test_cards("quality_ae_v1_test_metrics.json", "number_of_test_images")
     model, error = safe_load(load_ae, "Autoencoder")
     if error:
         st.error(error)
@@ -316,10 +315,11 @@ elif page == "Autoencoder":
             except Exception as exc:
                 st.error(f"Autoencoder inference failed: {exc}")
     with st.expander("Architecture and interpretation"):
-        st.write("Encoder downsamples the image; the bottleneck holds 2,048 values; the decoder restores 49,152 RGB values with Sigmoid output.")
+        st.write("The residual encoder compresses 49,152 RGB values into an 8,192-value latent tensor. The decoder uses bilinear resize-convolution blocks and Sigmoid output; no encoder-to-decoder skip connection bypasses the bottleneck.")
         st.write("Lower MSE is better; higher PSNR is better; SSIM closer to 1 indicates stronger structural similarity.")
-        st.write("Current checkpoint: best epoch 76 · validation MSE 0.00305005.")
-        st.write("Complete held-out test: MSE 0.00303199 · PSNR 26.0159 dB · SSIM 0.792911.")
+        st.write("Current checkpoint: epoch 79 selected by validation SSIM 0.942674 · validation MSE 0.00095790.")
+        st.write("Complete held-out test: MSE 0.00094603 · PSNR 31.1951 dB · SSIM 0.938654.")
+        st.caption("The preserved RTX-80 model used a stronger 24× compression ratio; this quality-focused model trades compression for substantially better reconstruction fidelity.")
 
 
 elif page == "Variational Autoencoder":
@@ -637,7 +637,7 @@ else:
     details[2].metric("Demo samples", "24")
     st.markdown("### Implemented scope")
     st.write(
-        "Convolutional Autoencoder, VAE V5, trained Vision Transformer V2, and a separate pretrained "
+        "Quality Autoencoder V1, VAE V5, trained Vision Transformer V2, and a separate pretrained "
         "FLAN-T5 evidence-intelligence integration. GAN code/checkpoints remain preserved for the later phase."
     )
     st.markdown("### Current boundaries")

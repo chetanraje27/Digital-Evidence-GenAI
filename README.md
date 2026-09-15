@@ -35,7 +35,7 @@ Every row below comes from the same canonical 1,892-image test manifest. Values 
 
 | Model | MSE ↓ | PSNR ↑ | SSIM ↑ | Parameters | Epoch |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Autoencoder RTX-80 Final | 0.00303199 | 26.0159 dB | 0.792911 | 265,571 | 76 |
+| Quality Autoencoder V1 | 0.00094603 | 31.1951 dB | 0.938654 | 2,371,715 | 79 |
 | VAE V5 Final | 0.00070007 | 32.9535 dB | 0.961139 | 17,599,971 | 79 |
 | Vision Transformer V2 | 0.00220733 | 27.2652 dB | 0.844864 | 3,591,168 | 50 |
 
@@ -43,7 +43,7 @@ Authoritative artifacts:
 
 - `results/image_model_comparison.json`
 - `results/image_model_comparison.csv`
-- `results/ae_rtx80_test_metrics.json`
+- `results/quality_ae_v1_test_metrics.json`
 - `results/vae_v5_final_test_metrics.json`
 - `results/transformer_v2_test_metrics.json`
 - `results/transformer_v2_test_per_image_metrics.csv`
@@ -52,30 +52,31 @@ MSE, PSNR, and SSIM measure reconstruction fidelity only. The VAE's exploratory 
 
 ## Model details
 
-### Autoencoder RTX-80 Final
+### Quality Autoencoder V1 Final
 
 - Input: `3 × 128 × 128`
-- Latent tensor: `32 × 8 × 8` (2,048 values)
-- Compression ratio: `24×`
-- Parameters: 265,571
-- Active checkpoint: `checkpoints/best_autoencoder_rtx80_portable.pth`
-- Best checkpoint epoch: 76
-- Validation MSE: 0.00305005
-- Loss/role: deterministic MSE reconstruction, not classification
+- Latent tensor: `32 × 16 × 16` (8,192 values)
+- Compression ratio: `6×`
+- Parameters: 2,371,715
+- Active checkpoint: `checkpoints/best_quality_autoencoder_v1.pth`
+- Best checkpoint epoch: 79, selected by validation SSIM
+- Validation MSE / SSIM: 0.00095790 / 0.942674
+- Loss: `0.65 × L1 + 0.25 × (1 - SSIM) + 0.10 × edge loss`
+- Role: deterministic reconstruction and compression, not classification
 
 The GUI labels outputs as `Original Image` and `Reconstructed Image` and does not issue an authenticity verdict.
 
 ![AE canonical reconstruction examples](docs/results/ae_reconstruction_examples.png)
 
-#### Quality Autoencoder candidate (not yet an active result)
+The model uses residual blocks and resize-convolution upsampling with no
+encoder-to-decoder skip connections. Compared with the preserved 24× RTX-80 model,
+it deliberately trades compression for substantially stronger measured and visual
+reconstruction fidelity. The RTX-80 checkpoint remains available as a historical
+baseline.
 
-`notebooks/AE/04_quality_autoencoder_training_colab.ipynb` trains a separate
-quality-focused candidate from scratch. It uses residual blocks, resize-convolution
-upsampling, a `32 x 16 x 16` latent tensor (6x compression), and a weighted
-L1/SSIM/edge objective. It has no encoder-to-decoder skip connections. Checkpoint
-selection uses validation SSIM; the canonical test split is evaluated only after
-training. Do not replace the active RTX-80 checkpoint or claim an improvement until
-the generated metrics and reconstruction grids have been reviewed.
+![Quality AE training curves](docs/results/quality_ae_training_curve.png)
+
+![Quality AE canonical test reconstructions](docs/results/quality_ae_test_reconstructions.png)
 
 ### VAE V5 Final
 
@@ -200,11 +201,13 @@ The first evidence-language-model run downloads public FLAN-T5 weights from Hugg
 
 ## Checkpoints and Git LFS
 
-`checkpoints/VAE_V5_FINAL.pth` is managed by Git LFS and is approximately 211 MB. GitHub source ZIP files may contain only a small text pointer instead of model bytes. Clone/fetch with LFS:
+`checkpoints/VAE_V5_FINAL.pth` and `checkpoints/best_quality_autoencoder_v1.pth`
+are managed by Git LFS. GitHub source ZIP files may contain only small text pointers
+instead of model bytes. Clone/fetch with LFS:
 
 ```powershell
 git lfs install
-git lfs pull --include="checkpoints/VAE_V5_FINAL.pth"
+git lfs pull --include="checkpoints/VAE_V5_FINAL.pth,checkpoints/best_quality_autoencoder_v1.pth"
 ```
 
 The active inference wrappers inspect checkpoint headers before calling `torch.load`. If a pointer is found, the error reports the expected size and exact LFS fetch command.
@@ -213,7 +216,7 @@ Checkpoint locations can be overridden without editing code:
 
 | Environment variable | Default |
 | --- | --- |
-| `AE_CHECKPOINT_PATH` | `checkpoints/best_autoencoder_rtx80_portable.pth` |
+| `AE_CHECKPOINT_PATH` | `checkpoints/best_quality_autoencoder_v1.pth` |
 | `VAE_CHECKPOINT_PATH` | `checkpoints/VAE_V5_FINAL.pth` |
 | `VISION_TRANSFORMER_CHECKPOINT_PATH` | `checkpoints/transformer_v2_final.pth` |
 

@@ -4,16 +4,16 @@
   "metric_interpretation": "MSE, PSNR, and SSIM measure reconstruction fidelity; they are not tampering verdicts.",
   "models": [
     {
-      "model": "Autoencoder RTX-80 Final",
+      "model": "Quality Autoencoder V1",
       "primary_role": "Deterministic reconstruction and compression",
       "test_images": 1892,
-      "mse": 0.0030319858478006527,
-      "psnr_db": 26.015853145688187,
-      "ssim": 0.7929105853335046,
-      "parameters": 265571,
-      "checkpoint_epoch": 76,
-      "evaluation_seconds": 303.8882567999972,
-      "source_result": "results/ae_rtx80_test_metrics.json"
+      "mse": 0.000946025942760688,
+      "psnr_db": 31.19508006766438,
+      "ssim": 0.9386538375822737,
+      "parameters": 2371715,
+      "checkpoint_epoch": 79,
+      "evaluation_seconds": 18.427418354999645,
+      "source_result": "results/quality_ae_v1_test_metrics.json"
     },
     {
       "model": "VAE V5 Final",
