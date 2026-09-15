@@ -17,9 +17,9 @@ cells = [
 md("""
 # Autoencoder V2 — Quality-Focused CASIA Training on Colab
 
-This notebook retrains/fine-tunes the **existing validated convolutional Autoencoder**; it does not change the architecture, 24× bottleneck, dataset split, or `[0,1]` preprocessing.
+This notebook fine-tunes the **existing validated RTX80 convolutional Autoencoder**; it does not change the architecture, 24× bottleneck, dataset split, or `[0,1]` preprocessing.
 
-Recommended strategy: initialize from `best_autoencoder.pth` (epoch 42 baseline), then fine-tune with a lower learning rate. The new run writes only `*_v2` artifacts, so the baseline remains recoverable. Better results are selected strictly by validation MSE—improvement is targeted, not guaranteed.
+The run initializes from `best_autoencoder_rtx80_portable.pth` (epoch 76), then fine-tunes with a lower learning rate. New artifacts use separate `*_rtx80_finetuned` paths, so both the RTX80 baseline and the earlier V2 run remain recoverable. Better results are selected strictly by validation MSE—improvement is targeted, not guaranteed.
 """),
 md("## 1. Colab setup\nSelect **Runtime → Change runtime type → T4 GPU** before running."),
 code("""
@@ -116,7 +116,7 @@ print("Latent:", tuple(latent.shape), "parameters:", sum(p.numel() for p in mode
 md("""
 ## 5. Baseline checkpoint
 
-Recommended: place the existing `best_autoencoder.pth` in Google Drive at `/content/drive/MyDrive/Digital_Evidence/checkpoints/`. If it is absent, the notebook can train from scratch, but fine-tuning the validated baseline is the safer route to improving its result.
+Recommended: place `best_autoencoder_rtx80_portable.pth` in Google Drive at `/content/drive/MyDrive/Digital_Evidence/checkpoints/`. The repository copy is used as a fallback. The notebook stops if the validated RTX80 baseline is unavailable rather than silently starting a scientifically different scratch run.
 """),
 code("""
 from google.colab import drive
@@ -125,22 +125,36 @@ drive.mount("/content/drive")
 DRIVE_PROJECT = Path("/content/drive/MyDrive/Digital_Evidence")
 DRIVE_PROJECT.mkdir(parents=True, exist_ok=True)
 baseline_candidates = [
-    DRIVE_PROJECT / "checkpoints" / "best_autoencoder.pth",
-    PROJECT_ROOT / "checkpoints" / "best_autoencoder.pth",
+    DRIVE_PROJECT / "checkpoints" / "best_autoencoder_rtx80_portable.pth",
+    PROJECT_ROOT / "checkpoints" / "best_autoencoder_rtx80_portable.pth",
 ]
 BASELINE_CHECKPOINT = next((p for p in baseline_candidates if p.is_file()), None)
-print("Baseline checkpoint:", BASELINE_CHECKPOINT or "NOT FOUND — scratch training will be used")
-if BASELINE_CHECKPOINT:
-    ckpt = torch.load(BASELINE_CHECKPOINT, map_location="cpu", weights_only=True)
-    print("Baseline epoch:", ckpt.get("epoch"), "validation MSE:", ckpt.get("validation_loss"))
+assert BASELINE_CHECKPOINT is not None, (
+    "RTX80 baseline checkpoint is unavailable. Put best_autoencoder_rtx80_portable.pth "
+    "in the Drive checkpoints folder or pull the repository's LFS checkpoint bytes."
+)
+with BASELINE_CHECKPOINT.open("rb") as checkpoint_file:
+    is_lfs_pointer = checkpoint_file.read(128).startswith(
+        b"version https://git-lfs.github.com/spec/v1"
+    )
+assert not is_lfs_pointer, (
+    "The RTX80 checkpoint is only a Git LFS pointer. In a Colab terminal run: "
+    "git -C /content/Digital-Evidence-GenAI lfs pull --include="
+    "checkpoints/best_autoencoder_rtx80_portable.pth"
+)
+ckpt = torch.load(BASELINE_CHECKPOINT, map_location="cpu", weights_only=True)
+assert "model_state_dict" in ckpt, "RTX80 checkpoint has an unexpected format."
+print("Baseline checkpoint:", BASELINE_CHECKPOINT)
+print("Baseline epoch:", ckpt.get("epoch"), "validation MSE:", ckpt.get("validation_loss"))
 """),
 md("""
 ## 6. Quality-focused configuration
 
 - Existing architecture, 128×128 input, batch size 32, Adam, and MSE remain unchanged.
-- Fine-tuning starts at `1e-4`; `ReduceLROnPlateau` can reduce it to `1e-6`.
-- Up to 60 additional epochs; early stopping patience 10.
+- Fine-tuning starts conservatively at `2e-5`; `ReduceLROnPlateau` can reduce it to `1e-7`.
+- Up to 40 additional epochs; early stopping patience 8.
 - CUDA mixed precision improves T4 speed without changing the model.
+- The epoch-76 RTX80 weights remain selected unless validation MSE genuinely improves.
 """),
 code("""
 from argparse import Namespace
@@ -148,17 +162,17 @@ from argparse import Namespace
 V2_ROOT = PROJECT_ROOT
 common = dict(
     splits_dir=SPLITS_DIR, image_size=128, batch_size=32, num_workers=2,
-    learning_rate=1e-4 if BASELINE_CHECKPOINT else 1e-3,
-    min_learning_rate=1e-6, weight_decay=1e-6, max_epochs=60,
-    patience=10, lr_patience=3, lr_factor=0.5, min_delta=1e-7,
+    learning_rate=2e-5,
+    min_learning_rate=1e-7, weight_decay=1e-6, max_epochs=40,
+    patience=8, lr_patience=2, lr_factor=0.5, min_delta=1e-7,
     seed=42, initial_checkpoint=BASELINE_CHECKPOINT,
 )
 TRAIN_ARGS = Namespace(**common,
-    checkpoint_path=V2_ROOT / "checkpoints" / "best_autoencoder_v2.pth",
-    history_path=V2_ROOT / "results" / "ae_v2_training_history.csv",
-    summary_path=V2_ROOT / "results" / "ae_v2_training_summary.json",
-    curve_path=V2_ROOT / "outputs" / "ae_v2" / "training_curve.png",
-    grid_path=V2_ROOT / "outputs" / "ae_v2" / "reconstruction_grid.png",
+    checkpoint_path=V2_ROOT / "checkpoints" / "best_autoencoder_rtx80_finetuned.pth",
+    history_path=V2_ROOT / "results" / "ae_rtx80_finetuned_training_history.csv",
+    summary_path=V2_ROOT / "results" / "ae_rtx80_finetuned_training_summary.json",
+    curve_path=V2_ROOT / "outputs" / "ae_rtx80_finetuned" / "training_curve.png",
+    grid_path=V2_ROOT / "outputs" / "ae_rtx80_finetuned" / "reconstruction_grid.png",
     smoke_test=False, smoke_batches=2, require_cuda=True,
 )
 print(vars(TRAIN_ARGS))
@@ -207,11 +221,11 @@ from evaluate_autoencoder import evaluate
 
 EVAL_ARGS = Namespace(
     splits_dir=SPLITS_DIR, checkpoint_path=TRAIN_ARGS.checkpoint_path,
-    per_image_csv=PROJECT_ROOT / "results" / "ae_v2_test_per_image_metrics.csv",
-    metrics_json=PROJECT_ROOT / "results" / "ae_v2_test_metrics.json",
-    reconstruction_grid=PROJECT_ROOT / "outputs" / "ae_v2" / "test_reconstruction_grid.png",
-    mse_plot=PROJECT_ROOT / "outputs" / "ae_v2" / "authentic_vs_tampered_mse.png",
-    ssim_plot=PROJECT_ROOT / "outputs" / "ae_v2" / "authentic_vs_tampered_ssim.png",
+    per_image_csv=PROJECT_ROOT / "results" / "ae_rtx80_finetuned_test_per_image_metrics.csv",
+    metrics_json=PROJECT_ROOT / "results" / "ae_rtx80_finetuned_test_metrics.json",
+    reconstruction_grid=PROJECT_ROOT / "outputs" / "ae_rtx80_finetuned" / "test_reconstruction_grid.png",
+    mse_plot=PROJECT_ROOT / "outputs" / "ae_rtx80_finetuned" / "authentic_vs_tampered_mse.png",
+    ssim_plot=PROJECT_ROOT / "outputs" / "ae_rtx80_finetuned" / "authentic_vs_tampered_ssim.png",
     image_size=128, batch_size=32, num_workers=2, samples_per_class=3, seed=42,
 )
 test_metrics = evaluate(EVAL_ARGS)
@@ -222,15 +236,18 @@ code("""
 display(DisplayImage(filename=str(EVAL_ARGS.reconstruction_grid)))
 display(DisplayImage(filename=str(EVAL_ARGS.mse_plot)))
 
-baseline_metrics_path = PROJECT_ROOT / "results" / "ae_test_metrics.json"
+baseline_metrics_path = PROJECT_ROOT / "results" / "ae_rtx80_test_metrics.json"
 if baseline_metrics_path.is_file():
     baseline_metrics = json.loads(baseline_metrics_path.read_text())
     comparison = pd.DataFrame([
-        {"model": "Current baseline", **{m: baseline_metrics["overall"][f"{m}_mean"] for m in ("mse", "psnr", "ssim")}},
+        {"model": "RTX80 baseline", **{m: baseline_metrics["overall"][f"{m}_mean"] for m in ("mse", "psnr", "ssim")}},
         {"model": "New AE V2", **{m: test_metrics["overall"][f"{m}_mean"] for m in ("mse", "psnr", "ssim")}},
     ])
     display(comparison)
-    print("V2 improved MSE:", comparison.loc[1, "mse"] < comparison.loc[0, "mse"])
+    improved = comparison.loc[1, "mse"] < comparison.loc[0, "mse"]
+    print("V2 improved held-out test MSE:", improved)
+    if not improved:
+        print("Keep the RTX80 baseline as the active model; do not claim V2 is better.")
 else:
     print("Baseline metrics file unavailable; V2 metrics are shown above.")
 print("Note: authentic/tampered reconstruction differences are exploratory; the AE is not a forgery detector.")
@@ -243,6 +260,8 @@ artifact_paths = [
     EVAL_ARGS.metrics_json, EVAL_ARGS.reconstruction_grid, EVAL_ARGS.mse_plot, EVAL_ARGS.ssim_plot,
 ]
 for source in artifact_paths:
+    if not source.is_file():
+        raise FileNotFoundError(f"Required artifact was not produced: {source}")
     relative = source.relative_to(PROJECT_ROOT)
     destination = DRIVE_PROJECT / relative
     destination.parent.mkdir(parents=True, exist_ok=True)

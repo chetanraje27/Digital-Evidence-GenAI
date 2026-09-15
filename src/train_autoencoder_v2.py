@@ -11,7 +11,9 @@ import csv
 import json
 import random
 import time
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import matplotlib
 import numpy as np
@@ -40,6 +42,29 @@ def _load_model_state(path: Path, device: torch.device) -> tuple[dict, dict]:
     if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
         return checkpoint["model_state_dict"], checkpoint
     return checkpoint, {}
+
+
+def _safe_checkpoint_value(value: Any) -> Any:
+    """Convert runtime configuration values to weights-only-safe primitives."""
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, Mapping):
+        return {str(key): _safe_checkpoint_value(item) for key, item in value.items()}
+    if isinstance(value, tuple):
+        return tuple(_safe_checkpoint_value(item) for item in value)
+    if isinstance(value, list):
+        return [_safe_checkpoint_value(item) for item in value]
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    raise TypeError(
+        f"Unsupported checkpoint configuration value: {type(value).__name__}. "
+        "Store only tensors and primitive metadata in model checkpoints."
+    )
+
+
+def checkpoint_config(args: argparse.Namespace) -> dict[str, Any]:
+    """Return Namespace metadata compatible with torch.load(weights_only=True)."""
+    return {key: _safe_checkpoint_value(value) for key, value in vars(args).items()}
 
 
 def run_epoch(model, loader, criterion, device, optimizer=None, scaler=None, max_batches=None):
@@ -174,7 +199,7 @@ def train(args: argparse.Namespace) -> dict[str, object]:
                 "model_state_dict": model.state_dict(), "optimizer_state_dict": optimizer.state_dict(),
                 "scheduler_state_dict": scheduler.state_dict(), "epoch": epoch,
                 "validation_loss": validation_loss, "initialized_from": initialized_from,
-                "config": vars(args),
+                "config": checkpoint_config(args),
             }, args.checkpoint_path)
         else:
             stale_epochs += 1
@@ -207,21 +232,41 @@ def train(args: argparse.Namespace) -> dict[str, object]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--splits-dir", type=Path, default=Path("data/splits"))
-    parser.add_argument("--initial-checkpoint", type=Path, default=Path("checkpoints/best_autoencoder.pth"))
-    parser.add_argument("--checkpoint-path", type=Path, default=Path("checkpoints/best_autoencoder_v2.pth"))
-    parser.add_argument("--history-path", type=Path, default=Path("results/ae_v2_training_history.csv"))
-    parser.add_argument("--summary-path", type=Path, default=Path("results/ae_v2_training_summary.json"))
-    parser.add_argument("--curve-path", type=Path, default=Path("outputs/ae_v2/training_curve.png"))
-    parser.add_argument("--grid-path", type=Path, default=Path("outputs/ae_v2/reconstruction_grid.png"))
+    parser.add_argument(
+        "--initial-checkpoint",
+        type=Path,
+        default=Path("checkpoints/best_autoencoder_rtx80_portable.pth"),
+    )
+    parser.add_argument(
+        "--checkpoint-path",
+        type=Path,
+        default=Path("checkpoints/best_autoencoder_rtx80_finetuned.pth"),
+    )
+    parser.add_argument(
+        "--history-path", type=Path,
+        default=Path("results/ae_rtx80_finetuned_training_history.csv"),
+    )
+    parser.add_argument(
+        "--summary-path", type=Path,
+        default=Path("results/ae_rtx80_finetuned_training_summary.json"),
+    )
+    parser.add_argument(
+        "--curve-path", type=Path,
+        default=Path("outputs/ae_rtx80_finetuned/training_curve.png"),
+    )
+    parser.add_argument(
+        "--grid-path", type=Path,
+        default=Path("outputs/ae_rtx80_finetuned/reconstruction_grid.png"),
+    )
     parser.add_argument("--image-size", type=int, default=128)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--num-workers", type=int, default=2)
-    parser.add_argument("--learning-rate", type=float, default=1e-4)
-    parser.add_argument("--min-learning-rate", type=float, default=1e-6)
+    parser.add_argument("--learning-rate", type=float, default=2e-5)
+    parser.add_argument("--min-learning-rate", type=float, default=1e-7)
     parser.add_argument("--weight-decay", type=float, default=1e-6)
-    parser.add_argument("--max-epochs", type=int, default=60)
-    parser.add_argument("--patience", type=int, default=10)
-    parser.add_argument("--lr-patience", type=int, default=3)
+    parser.add_argument("--max-epochs", type=int, default=40)
+    parser.add_argument("--patience", type=int, default=8)
+    parser.add_argument("--lr-patience", type=int, default=2)
     parser.add_argument("--lr-factor", type=float, default=0.5)
     parser.add_argument("--min-delta", type=float, default=1e-7)
     parser.add_argument("--seed", type=int, default=42)
