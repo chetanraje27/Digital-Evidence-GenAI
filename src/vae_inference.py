@@ -96,9 +96,12 @@ class VAEInference:
                 z = mu + temperature * std * epsilon
                 sampled = self.model.decode(z, e1, e2, e3, e4)
                 sample_metrics = image_metrics(tensor, sampled)
+                absolute_delta = torch.mean(torch.abs(sampled - deterministic), dim=1)
                 variations.append(
                     {
                         "image": self._to_array(sampled),
+                        "difference_map": absolute_delta.squeeze(0).cpu().numpy(),
+                        "difference_map_max": float(torch.max(absolute_delta)),
                         "metrics": sample_metrics,
                         "latent_l2_from_mu": float(torch.linalg.vector_norm(z - mu)),
                         "mean_abs_delta_from_deterministic": float(

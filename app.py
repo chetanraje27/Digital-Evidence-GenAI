@@ -176,14 +176,32 @@ def compare_images(original, reconstructed, caption):
         st.image(reconstructed, caption=caption, width="stretch", clamp=True)
 
 
+def model_specification(rows: list[tuple[str, str]]) -> None:
+    """Render the faculty-requested model description in a compact, consistent form."""
+    with st.expander("Architecture, objective, and role", expanded=False):
+        st.dataframe(
+            pd.DataFrame(rows, columns=["Aspect", "Current implementation"]),
+            hide_index=True,
+            width="stretch",
+        )
+
+
 def image_input(key):
     demo_records = load_demo_manifest()
     choices = ["Upload image"] + (["Canonical test demo"] if demo_records else [])
     source = st.radio("Image source", choices, horizontal=True, key=f"{key}_source")
     if source == "Canonical test demo":
+        with st.expander(f"Browse available held-out gallery ({len(demo_records)} samples)"):
+            gallery_columns = st.columns(6)
+            for index, record in enumerate(demo_records):
+                with gallery_columns[index % 6]:
+                    st.image(record["path"], width="stretch")
+                    st.caption(record["label"])
         labels = [record["label"] for record in demo_records]
         selected_label = st.selectbox(
-            "Choose one of 24 reproducible held-out examples", labels, key=f"{key}_demo"
+            f"Choose one of {len(demo_records)} reproducible held-out examples",
+            labels,
+            key=f"{key}_demo",
         )
         selected = demo_records[labels.index(selected_label)]
         try:
@@ -194,6 +212,12 @@ def image_input(key):
         except (UnidentifiedImageError, OSError, ValueError) as exc:
             st.error(f"The selected demo image could not be read: {exc}")
             return None
+
+    if not demo_records:
+        st.caption(
+            "The local CASIA files are unavailable, so the held-out gallery is disabled. "
+            "Manual upload remains available; the full dataset is intentionally not committed."
+        )
 
     upload = st.file_uploader(
         "Choose an image",
@@ -298,6 +322,17 @@ elif page == "Autoencoder":
     st.markdown('<div class="workflow">RGB image → residual encoder → 6× latent bottleneck → resize-convolution decoder → reconstruction</div>', unsafe_allow_html=True)
     st.markdown("#### Verified canonical test result")
     verified_test_cards("quality_ae_v1_test_metrics.json", "number_of_test_images")
+    model_specification(
+        [
+            ("Architecture", "Residual convolutional Autoencoder without encoder-decoder skip bypasses"),
+            ("Input", "128×128 RGB image normalized to [0, 1]"),
+            ("Processing", "Residual encoder → 32×16×16 bottleneck → resize-convolution decoder"),
+            ("Output", "Deterministic 128×128 RGB reconstruction"),
+            ("Loss/objective", "0.65 L1 + 0.25 (1 − SSIM) + 0.10 edge-preservation loss"),
+            ("Evaluation", "MSE, PSNR, and SSIM on the canonical 1,892-image test split"),
+            ("Role", "High-fidelity deterministic compression/reconstruction; not a forgery classifier"),
+        ]
+    )
     model, error = safe_load(load_ae, "Autoencoder")
     if error:
         st.error(error)
@@ -330,21 +365,29 @@ elif page == "Variational Autoencoder":
     st.markdown('<div class="workflow">Encoder → μ and log variance → latent z → skip-connected decoder → reconstruction</div>', unsafe_allow_html=True)
     st.markdown("#### Verified canonical test result")
     verified_test_cards("vae_v5_final_test_metrics.json", "test_images")
+    model_specification(
+        [
+            ("Architecture", "Residual VAE V5 with GroupNorm, SiLU, 256-D latent space, and decoder skips"),
+            ("Input", "128×128 RGB image normalized to [0, 1]"),
+            ("Processing", "Encoder → μ/log variance → reparameterized z → skip-connected decoder"),
+            ("Output", "Deterministic posterior-mean reconstruction and three posterior samples"),
+            ("Loss/objective", "0.5 MSE + 0.5 L1 reconstruction loss + beta-weighted KL divergence"),
+            ("Evaluation", "MSE, PSNR, SSIM, and mean KL on the canonical held-out test split"),
+            ("Role", "Probabilistic latent representation and reconstruction; not a tampering verdict"),
+        ]
+    )
     model, error = safe_load(load_vae, "VAE V5 Final")
     if error:
         st.error(error)
     else:
         reconstruction_tab, generation_tab = st.tabs(["Probabilistic reconstructions", "Prior-only limitation"])
         with reconstruction_tab:
-            controls = st.columns(3)
+            controls = st.columns(2)
             temperature = controls[0].slider(
-                "Sampling temperature", 0.25, 3.0, 1.0, 0.25,
+                "Sampling temperature", 0.25, 3.0, 2.0, 0.25,
                 help="Scales posterior uncertainty; higher values produce larger latent changes.",
             )
-            sample_count = controls[1].select_slider(
-                "Stochastic samples", options=[1, 2, 3, 4], value=3
-            )
-            sample_seed = controls[2].number_input(
+            sample_seed = controls[1].number_input(
                 "Random seed", min_value=0, max_value=2_147_483_647, value=42, step=1
             )
             image = image_input("vae_upload") if processing_consent("vae") else None
@@ -355,7 +398,7 @@ elif page == "Variational Autoencoder":
                     with st.spinner("Sampling the image-conditioned VAE posterior…"):
                         original, reconstructed, variations, result = model.reconstruct_variations(
                             image,
-                            n_samples=int(sample_count),
+                            n_samples=3,
                             temperature=float(temperature),
                             seed=int(sample_seed),
                         )
@@ -379,6 +422,25 @@ elif page == "Variational Autoencoder":
                                 "Mean |pixel delta| from deterministic: "
                                 f"{variation['mean_abs_delta_from_deterministic']:.6f}"
                             )
+                    st.markdown("#### Difference maps: stochastic variation − deterministic reconstruction")
+                    difference_columns = st.columns(3)
+                    for index, (column, variation) in enumerate(zip(difference_columns, variations), 1):
+                        with column:
+                            figure, axis = plt.subplots(figsize=(4, 3.3))
+                            heatmap = axis.imshow(variation["difference_map"], cmap="magma")
+                            axis.set_title(f"Variation {index} · absolute RGB difference")
+                            axis.axis("off")
+                            figure.colorbar(heatmap, ax=axis, fraction=0.046, pad=0.04)
+                            figure.tight_layout()
+                            st.pyplot(figure)
+                            plt.close(figure)
+                            st.caption(
+                                f"Maximum mean-channel difference: {variation['difference_map_max']:.6f}"
+                            )
+                    st.caption(
+                        "Each heatmap uses its own measured color scale so subtle posterior effects remain "
+                        "visible. The reconstructed images themselves are not enhanced or modified."
+                    )
                     st.caption(
                         f"Reproducible posterior samples · seed {int(sample_seed)} · "
                         f"temperature {temperature:.2f}. Small visual differences may reflect the "
@@ -417,6 +479,17 @@ elif page == "Vision Transformer":
     st.markdown('<div class="workflow">Image → 8×8 patch grid → attention encoder → token decoder → reconstruction + attention view</div>', unsafe_allow_html=True)
     st.markdown("#### Verified canonical test result")
     verified_test_cards("transformer_v2_test_metrics.json", "test_images")
+    model_specification(
+        [
+            ("Architecture", "Vision Transformer autoencoder: 64 patch tokens, 256-D embeddings, 8 heads"),
+            ("Input", "128×128 RGB image split into an 8×8 grid of 16×16 patches"),
+            ("Processing", "Patch embedding + position embedding → 4 encoder layers → 2 decoder layers"),
+            ("Output", "RGB reconstruction plus exploratory 8×8 attention visualization"),
+            ("Loss/objective", "Mean squared reconstruction error"),
+            ("Evaluation", "MSE, PSNR, SSIM, and exploratory ROC-AUC on the canonical test split"),
+            ("Role", "Patch-relationship reconstruction and attention exploration; not manipulation proof"),
+        ]
+    )
     model, error = safe_load(load_transformer, "Transformer V2")
     if error:
         st.error(error)
@@ -465,6 +538,17 @@ elif page == "Evidence Intelligence Transformer":
     st.info(
         "The language model is pretrained and integrated for this project; it was not trained from scratch by the team. "
         "The first model load may download open-source weights."
+    )
+    model_specification(
+        [
+            ("Architecture", "Pretrained google/flan-t5-small encoder-decoder Transformer integration"),
+            ("Input", "Pasted text, UTF-8 TXT, or digitally extractable PDF up to 10 MB"),
+            ("Processing", "In-memory extraction → token-aware overlapping chunks → prompt → tokenizer/model"),
+            ("Output", "Structured evidence summary, entities, observations, relevance, and limitations"),
+            ("Loss/objective", "Pretrained seq2seq objective; no project fine-tuning or training claim"),
+            ("Evaluation", "Input/output tokens, processed chunks, truncation status, and inference time"),
+            ("Role", "AI-assisted evidence intelligence for human review; never a legal/forensic verdict"),
+        ]
     )
     evidence_consent = processing_consent("evidence")
 
@@ -520,7 +604,12 @@ elif page == "Evidence Intelligence Transformer":
                     with st.spinner("Tokenizing evidence and generating observations…"):
                         result = model.generate(evidence_text, prompt, int(max_new_tokens))
                     st.markdown("### Generated evidence intelligence")
-                    st.write(result.output)
+                    st.markdown(result.output)
+                    st.caption(
+                        "The Evidence Summary is generated by the pretrained Transformer. Entity and "
+                        "observation indicators are conservative source-text pattern matches added to "
+                        "reduce unsupported invention by the compact model."
+                    )
                     if result.truncated:
                         st.warning(
                             f"Document limit reached: processed {result.chunks_processed} of "

@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import unittest
+import sys
+from pathlib import Path
 
 import torch
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
 
 from evaluate_autoencoder import build_model
 from quality_autoencoder import ARCHITECTURE_NAME, QualityAutoencoder

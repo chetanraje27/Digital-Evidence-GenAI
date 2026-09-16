@@ -96,7 +96,7 @@ std = exp(0.5 × logvar)
 z = mu + temperature × std × epsilon,  epsilon ~ N(0, I)
 ```
 
-Every stochastic decode reuses the same image-conditioned skip tensors. Samples are seed-reproducible and are presented as probabilistic latent reconstructions—not new forensic facts. A five-image CPU smoke measurement at temperature 1.0 produced a mean absolute pixel delta of 0.001197 from the deterministic reconstruction (range 0.000259–0.003526 across 15 samples). This confirms real stochastic behavior while documenting that strong skip connections often make the visual differences subtle.
+Every stochastic decode reuses the same image-conditioned skip tensors. Samples are seed-reproducible and are presented as probabilistic latent reconstructions—not new forensic facts. The GUI always presents the original image, deterministic reconstruction, and three posterior samples. Per-sample absolute-difference heatmaps use their own disclosed measured color scales to make subtle changes visible without modifying the reconstructed images. A five-image CPU smoke measurement at temperature 1.0 produced a mean absolute pixel delta of 0.001197 from the deterministic reconstruction (range 0.000259–0.003526 across 15 samples). This confirms real stochastic behavior while documenting that strong skip connections often make the visual differences subtle.
 
 Prior-only generation is retained as a separate limitation demonstration; it can be dark/weak because the trained decoder relies heavily on encoder skips.
 
@@ -137,7 +137,8 @@ Features include:
 
 - pasted UTF-8 text, `.txt`, and digitally extractable `.pdf` inputs;
 - clear scanned/image-only PDF error when no digital text is found;
-- six-line default analyst prompt;
+- a structured default analyst prompt covering summary, entities, observations, relevance, and limitations;
+- a disclosed hybrid presentation: Transformer-generated summary plus conservative source-text indicators, reducing pressure on the compact model to invent entities;
 - token-aware chunking with processed/truncated counts;
 - configurable model through `EVIDENCE_MODEL_ID`;
 - deterministic beam generation on CPU or CUDA;
@@ -159,7 +160,7 @@ The professional GUI has eight pages:
 7. Privacy & Ethical AI
 8. Project Information
 
-The three image pages support normal uploads and a reproducible 24-image canonical test selector (12 authentic and 12 tampered) when local CASIA data is available. Model loading is cached, CPU fallback is automatic, and missing files/LFS pointers produce actionable errors.
+The three image pages support normal uploads and a browsable, reproducible 24-image canonical test gallery (12 authentic and 12 tampered) when local CASIA data is available. If raw data is absent, the app explains why the gallery is unavailable and retains manual upload. Model loading is cached, CPU fallback is automatic, and missing files/LFS pointers produce actionable errors.
 
 Privacy-oriented controls include:
 
@@ -245,7 +246,10 @@ Fast local validation:
 ```powershell
 python -m compileall -q app.py src tests
 python -m unittest discover -s tests -v
+python src/smoke_review2.py
 ```
+
+All repository tests use Python's built-in `unittest` discovery; no separate pytest command is required.
 
 Review-2 validation performed for this build includes:
 
@@ -261,12 +265,14 @@ Review-2 validation performed for this build includes:
 ```text
 app.py                         Unified Streamlit interface
 src/
-  autoencoder.py              Final convolutional AE architecture
+  quality_autoencoder.py      Active Quality Autoencoder V1 architecture
+  autoencoder.py              Preserved historical 24× convolutional AE architecture
   vae.py                      VAE V5 architecture, loss, beta schedule
   transformer.py              Vision Transformer V2 architecture
   *_inference.py              Cached-GUI-friendly image inference
   document_parser.py          Safe TXT/PDF extraction
   evidence_transformer.py     Pretrained language Transformer wrapper
+  smoke_review2.py            Real all-model and TXT/PDF smoke inference
   evaluate_transformer_v2.py Canonical Vision Transformer evaluation
   build_model_comparison.py   Verified same-split comparison builder
   generate_review2_artifacts.py Reproducible selected artifacts

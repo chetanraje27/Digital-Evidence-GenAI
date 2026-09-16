@@ -43,6 +43,22 @@ class EvidenceTransformerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.generate("", "Summarize facts.")
 
+    def test_compact_model_output_gets_source_grounded_section_scaffold(self) -> None:
+        model = self.model_stub()
+        result = model.generate(
+            "Mira Patel collected device EX-17 at 09:15, but a later note says 10:15. "
+            "The timezone is missing.",
+            "Analyze evidence.",
+            64,
+        )
+        self.assertIn("### Evidence Summary", result.output)
+        self.assertIn("### Important Entities", result.output)
+        self.assertIn("EX-17", result.output)
+        self.assertIn("09:15", result.output)
+        self.assertIn("10:15", result.output)
+        self.assertIn("time-zone context", result.output)
+        self.assertIn("conservative pattern matches", result.output)
+
 
 if __name__ == "__main__":
     unittest.main()
