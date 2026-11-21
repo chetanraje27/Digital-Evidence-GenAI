@@ -8,7 +8,20 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/chetanraje27/Digital-Evidence-GenAI)
 [![Evaluation](https://img.shields.io/badge/Canonical%20CASIA%20Test-1%2C892%20Images-success.svg)](data/splits/test.csv)
 
-> **Final Year B.Tech Computer Engineering Capstone Project · Semester 7 Generative AI Review 2**  
+> **Final Year B.Tech Computer Engineering Capstone Project ·**
+
+
+### Team Members
+
+| Name | Roll Number |
+| :--- | :---: |
+| Chetanraje Gund | 202301040080 |
+| Vaishnavi Nehare | 202301040037 |
+| Gauri Kale | 202301040079 |
+| Anshul Gawande | 202301040123 |
+
+
+
 > An end-to-end, multi-architecture Generative AI framework designed for digital evidence analysis, probabilistic latent representation, adversarial patch synthesis, multimodal Transformer intelligence, and forensic incident simulation.
 
 ---
@@ -416,45 +429,95 @@ The system integrates privacy-by-design engineering principles (GDPR Articles 5 
 ## 11. Installation & Quickstart Guide
 
 ### Prerequisites
-- Python 3.10, 3.11, or 3.12
-- Git and Git LFS
-- Windows PowerShell, Linux, or macOS terminal
-- (Optional) NVIDIA GPU with CUDA for FP16 acceleration
 
-### Setup Virtual Environment
+- Python **3.10, 3.11, or 3.12**
+- Git
+- Git LFS (required to retrieve the model `.pth` files tracked in this repository)
+- Internet access for the first FLAN-T5 model download (no API key is required)
+- Optional: NVIDIA GPU and a CUDA-enabled PyTorch installation for faster inference
+
+Run every command below from the repository root (the directory containing `app.py` and `requirements.txt`).
+
+### 1. Clone the Repository
+
+**Windows PowerShell, Linux, or macOS:**
+```bash
+git clone https://github.com/chetanraje27/Digital-Evidence-GenAI.git
+cd Digital-Evidence-GenAI
+```
+
+### 2. Create and Activate a Virtual Environment
 
 **Windows PowerShell:**
 ```powershell
-# Clone repository
-git clone https://github.com/chetanraje27/Digital-Evidence-GenAI.git
-cd Digital-Evidence-GenAI
-
-# Create virtual environment
-python -m venv .venv
+py -3.12 -m venv .venv
+# If py is unavailable, use: python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+```
 
-# Install dependencies
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+If PowerShell blocks activation, run `Set-ExecutionPolicy -Scope Process Bypass`, then activate again. You can avoid activation entirely by using `.venv\Scripts\python.exe -m pip ...` in Windows commands.
+
+**Windows Command Prompt:**
+```bat
+py -3.12 -m venv .venv
+.venv\Scripts\activate.bat
 ```
 
 **Linux / macOS:**
 ```bash
-git clone https://github.com/chetanraje27/Digital-Evidence-GenAI.git
-cd Digital-Evidence-GenAI
-
 python3 -m venv .venv
 source .venv/bin/activate
+```
 
+Verify that the virtual environment is active and uses the expected Python version:
+```bash
+python --version
+python -m pip --version
+```
+
+### 3. Install Dependencies
+
+```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-### Launch the Streamlit GUI
-```powershell
-streamlit run app.py
+The requirements file covers the Streamlit GUI, PyTorch, image processing, evaluation, Hugging Face Transformers, PDF parsing, GAN, and Diffusion dependencies.
+
+For a GPU machine, install the PyTorch build that matches your CUDA driver/toolkit before or after installing `requirements.txt`. CPU-only PyTorch also works; it will run all supported CPU pages, with slower inference for large models.
+
+### 4. Fetch Model Weights
+
+Install Git LFS once, then retrieve the tracked checkpoints:
+```bash
+git lfs install
+git lfs pull
 ```
-Open `http://localhost:8501/` in your browser.
+
+Do not treat a 134-byte text file beginning with `version https://git-lfs.github.com/spec/v1` as a usable checkpoint. The app and utility loaders report Git LFS pointer problems instead of passing them to PyTorch.
+
+On first use, the text evidence page downloads `google/flan-t5-small` through Hugging Face and caches it locally. It may require a larger Hugging Face download than the static image checkpoints.
+
+### 5. Launch the Streamlit GUI
+
+Use the environment's Python module entry point:
+```bash
+python -m streamlit run app.py
+```
+
+Then open `http://localhost:8501/` in a browser. The default page and model pages require no API key.
+
+To expose the app on a local network:
+```bash
+python -m streamlit run app.py --server.address 0.0.0.0
+```
+
+### Common Setup Checks
+
+- If `streamlit` is not recognized on Windows, run `python -m streamlit run app.py` instead of `streamlit run app.py`.
+- If a checkpoint is missing or is a Git LFS pointer, run `git lfs pull` and restart the app.
+- If the evidence Transformer cannot download, verify internet/DNS access and the Hugging Face cache. Set `EVIDENCE_MODEL_ID` only to a compatible local or Hugging Face seq2seq model.
+- If `pypdf` or image/PDF parsing dependencies fail, rerun `python -m pip install -r requirements.txt`.
 
 ---
 
@@ -530,7 +593,7 @@ python src/generate_review2_artifacts.py --include-text
 ```text
 Digital_Evidence/
 ├── app.py                           # Main Streamlit web application console
-├── requirements.txt                 # Pinned dependencies
+├── requirements.txt                 # Python dependency manifest
 ├── AGENTS.md                        # Project working rules and engineering constraints
 ├── REVIEW2_CONTEXT.md               # Faculty Review 2 technical context & guidelines
 ├── DIFFUSION_IMPLEMENTATION_AUDIT.md# Technical audit of the 1.6GB Diffusion U-Net
