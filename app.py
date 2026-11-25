@@ -9,7 +9,7 @@ import time
 from io import BytesIO
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -71,21 +71,19 @@ st.markdown("""
 [data-testid="stSidebar"]{background:linear-gradient(180deg,#061525 0%,#0a2540 50%,#051322 100%) !important;border-right:1px solid rgba(0,212,255,.18) !important}
 [data-testid="stSidebar"] *{color:#edf7fb}[data-testid="stSidebar"] hr{border-color:rgba(255,255,255,.12)}
 .sidebar-brand-card{background:linear-gradient(135deg,rgba(0,212,255,.12) 0%,rgba(11,79,120,.35) 100%);border:1px solid rgba(0,212,255,.35);border-radius:14px;padding:1rem 1.1rem;margin-bottom:1.1rem;box-shadow:0 8px 24px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.2)}
-.sidebar-badge{display:inline-block;font-size:.65rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#00d4ff;background:rgba(0,212,255,.15);border:1px solid rgba(0,212,255,.4);border-radius:999px;padding:.18rem .6rem;margin-bottom:.45rem}
 .sidebar-brand-title{font-size:1.25rem;font-weight:850;color:#ffffff;line-height:1.2;margin:0;letter-spacing:-.01em;text-shadow:0 0 18px rgba(0,212,255,.35)}
 .sidebar-brand-sub{font-size:.78rem;color:#a4d4ea;margin-top:.25rem;line-height:1.35;font-weight:500}
 .sidebar-kicker{font-size:.70rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#00d4ff;margin:1.1rem 0 .45rem .2rem;display:flex;align-items:center;gap:.4rem}
 [data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"]{gap:.35rem}
-[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label{background:rgba(255,255,255,.035) !important;border:1px solid rgba(255,255,255,.07) !important;border-radius:12px !important;padding:.58rem .95rem !important;margin:.12rem 0 !important;transition:all .22s cubic-bezier(.16,1,.3,1) !important;cursor:pointer !important;box-shadow:0 2px 6px rgba(0,0,0,.2) !important;display:flex !important;align-items:center !important}
-[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label:hover{background:linear-gradient(90deg,rgba(0,212,255,.15) 0%,rgba(11,79,120,.2) 100%) !important;border-color:rgba(0,212,255,.5) !important;transform:translateX(4px) !important;box-shadow:0 4px 16px rgba(0,212,255,.25) !important}
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label{background:rgba(255,255,255,.035) !important;border:1px solid rgba(255,255,255,.07) !important;border-radius:12px !important;padding:.58rem .95rem !important;margin:.12rem 0 !important;cursor:pointer !important;box-shadow:0 2px 6px rgba(0,0,0,.2) !important;display:flex !important;align-items:center !important}
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label:hover{background:linear-gradient(90deg,rgba(0,212,255,.15) 0%,rgba(11,79,120,.2) 100%) !important;border-color:rgba(0,212,255,.5) !important;box-shadow:0 4px 16px rgba(0,212,255,.25) !important}
 [data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label:has(input:checked){background:linear-gradient(90deg,rgba(0,212,255,.28) 0%,rgba(10,60,95,.45) 100%) !important;border:1px solid #00d4ff !important;border-left:4px solid #00d4ff !important;box-shadow:0 4px 18px rgba(0,212,255,.35),inset 0 1px 1px rgba(255,255,255,.2) !important}
 [data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child{display:none !important}
 [data-testid="stSidebar"] [data-testid="stRadio"] label p{color:#d1ecf8 !important;font-size:.91rem !important;font-weight:600 !important;line-height:1.35 !important;margin:0 !important;letter-spacing:.01em !important}
 [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) p{color:#ffffff !important;font-weight:800 !important;text-shadow:0 0 10px rgba(0,212,255,.4) !important}
 .sidebar-status-box{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:.85rem 1rem;margin-top:1rem;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 .sidebar-status-pill{display:flex;align-items:center;gap:.45rem;font-size:.70rem;font-weight:800;color:#38ef7d;margin-bottom:.35rem;letter-spacing:.08em}
-.pulse-dot{width:8px;height:8px;border-radius:50%;background-color:#38ef7d;box-shadow:0 0 8px #38ef7d;animation:pulse-green 2s infinite}
-@keyframes pulse-green{0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(56,239,125,.7)}70%{transform:scale(1.05);box-shadow:0 0 0 6px rgba(56,239,125,0)}100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(56,239,125,0)}}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background-color:#38ef7d;box-shadow:0 0 8px #38ef7d;}
 .hero{position:relative;overflow:hidden;padding:2rem 2.2rem;border-radius:22px;background:linear-gradient(125deg,#071b2d 0%,#0b4f78 58%,#0b8298 100%);box-shadow:0 18px 45px rgba(7,27,45,.18);color:white;margin-bottom:1.4rem}
 .hero:after{content:"";position:absolute;width:280px;height:280px;right:-70px;top:-120px;border-radius:50%;border:45px solid rgba(255,255,255,.07)}
 .eyebrow,.section-kicker,.small-label{font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
@@ -93,7 +91,23 @@ st.markdown("""
 .section-kicker{color:#0b7890;margin-bottom:.2rem}.section-title{font-size:1.65rem;font-weight:750;color:var(--ink);margin:0 0 .35rem}.section-copy{color:var(--muted);max-width:900px;line-height:1.6;margin-bottom:1.1rem}
 .model-card{border:1px solid var(--line);border-radius:16px;padding:1.15rem 1.2rem;background:white;box-shadow:0 7px 22px rgba(16,52,77,.07);min-height:182px}.model-card .tag{display:inline-block;padding:.22rem .58rem;border-radius:999px;background:#e5f7f8;color:#08758b;font-size:.72rem;font-weight:700;text-transform:uppercase}.model-card h3{color:var(--ink);margin:.7rem 0 .35rem;font-size:1.25rem}.model-card p{color:var(--muted);line-height:1.5;margin:0}
 .workflow{border:1px solid var(--line);border-radius:16px;background:var(--soft);padding:1rem 1.2rem;color:#24445b;font-weight:600;text-align:center}.guardrail{border-left:5px solid #e59a2f;background:#fff8eb;border-radius:10px;padding:.9rem 1rem;color:#68420c;line-height:1.55;margin:.8rem 0 1rem}.success-note{border-left:5px solid #18a37a;background:#ecfbf5;border-radius:10px;padding:.8rem 1rem;color:#155d49}.upload-guide{border:1px dashed #9ab6c8;border-radius:15px;padding:1.2rem;background:#f7fafc;color:#526c7d;text-align:center;margin:.5rem 0}.small-label{color:#668091}
-div[data-testid="stMetric"]{border:1px solid var(--line);border-radius:14px;padding:.75rem 1rem;background:linear-gradient(180deg,#fff,#f7fafc);box-shadow:0 4px 13px rgba(16,52,77,.05)}
+[data-testid="stSidebar"] label:focus-within{outline:2px solid #8fe8f2;outline-offset:2px}
+div[data-testid="stMetric"] {
+    border: 1px solid #cbdce3;
+    border-top: 3px solid #188296;
+    border-radius: 12px;
+    padding: .75rem 1rem;
+    background: linear-gradient(145deg, #fff, #f2f8fa);
+    box-shadow: 0 2px 8px rgba(16, 52, 77, .07);
+}
+[data-testid="stMetricLabel"] p { color: #425c68; font-weight: 600; }
+[data-testid="stMetricValue"] {
+    color: #102f40;
+    font-size: 1.2rem;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+}
+[data-testid="stMetricValue"] > div { white-space: normal; overflow-wrap: anywhere; }
 .stButton>button{border-radius:10px;min-height:2.7rem;font-weight:700}@media(max-width:800px){.hero{padding:1.4rem}.hero h1{font-size:1.7rem}}
 </style>""", unsafe_allow_html=True)
 
@@ -111,14 +125,14 @@ def load_ae():
     )
 
 
-@st.cache_resource(show_spinner="Loading VAE V5 Final…")
+@st.cache_resource(show_spinner="Loading Variational Autoencoder…")
 def load_vae():
     return VAEInference(
         configured_checkpoint("VAE_CHECKPOINT_PATH", "checkpoints/VAE_V5_FINAL.pth"), DEVICE, 256
     )
 
 
-@st.cache_resource(show_spinner="Loading Transformer V2…")
+@st.cache_resource(show_spinner="Loading Vision Transformer…")
 def load_transformer():
     return TransformerInference(
         configured_checkpoint("VISION_TRANSFORMER_CHECKPOINT_PATH", "checkpoints/transformer_v2_final.pth"),
@@ -155,12 +169,12 @@ def load_image_comparison() -> pd.DataFrame:
     rows = payload["models"]
     return pd.DataFrame(
         {
-            "Model": [row["model"] for row in rows],
+            "Model": [{"Quality Autoencoder V1": "Autoencoder", "VAE V5 Final": "Variational Autoencoder", "Vision Transformer V2": "Vision Transformer"}.get(row["model"], row["model"]) for row in rows],
             "Primary role": [row["primary_role"] for row in rows],
             "Test images": [f"{int(row['test_images']):,}" for row in rows],
-            "MSE ↓": [f"{float(row['mse']):.6f}" for row in rows],
+            "MSE ↓": [f"{float(row['mse']):.4f}" for row in rows],
             "PSNR ↑": [f"{float(row['psnr_db']):.4f} dB" for row in rows],
-            "SSIM ↑": [f"{float(row['ssim']):.6f}" for row in rows],
+            "SSIM ↑": [f"{float(row['ssim']):.4f}" for row in rows],
             "Parameters": [f"{int(row['parameters']):,}" for row in rows],
             "Epoch": [int(row["checkpoint_epoch"]) for row in rows],
         }
@@ -229,9 +243,9 @@ def heading(kicker, title, copy):
 
 def metrics_cards(metrics):
     columns = st.columns(3)
-    columns[0].metric("MSE ↓", f"{metrics['mse']:.6f}", help="Lower means less pixel error.")
-    columns[1].metric("PSNR ↑", f"{metrics['psnr']:.3f} dB", help="Higher generally means better reconstruction.")
-    columns[2].metric("SSIM ↑", f"{metrics['ssim']:.4f}", help="Closer to 1 means stronger structural similarity.")
+    columns[0].metric("MSE", f"{metrics['mse']:.4f}", help="Lower means less pixel error.")
+    columns[1].metric("PSNR", f"{metrics['psnr']:.3f} dB", help="Higher generally means better reconstruction.")
+    columns[2].metric("SSIM", f"{metrics['ssim']:.4f}", help="Closer to 1 means stronger structural similarity.")
 
 
 def compare_images(original, reconstructed, caption):
@@ -309,10 +323,10 @@ def verified_test_cards(filename: str, count_key: str) -> None:
         result = load_result(filename)
         overall = result["overall"]
         cards = st.columns(4)
-        cards[0].metric("Canonical test images", f"{int(result[count_key]):,}")
-        cards[1].metric("Test MSE ↓", f"{float(overall['mse_mean']):.6f}")
-        cards[2].metric("Test PSNR ↑", f"{float(overall['psnr_mean']):.4f} dB")
-        cards[3].metric("Test SSIM ↑", f"{float(overall['ssim_mean']):.6f}")
+        cards[0].metric("Test images", f"{int(result[count_key]):,}")
+        cards[1].metric("Test MSE", f"{float(overall['mse_mean']):.4f}")
+        cards[2].metric("Test PSNR", f"{float(overall['psnr_mean']):.4f} dB")
+        cards[3].metric("Test SSIM", f"{float(overall['ssim_mean']):.4f}")
     except (FileNotFoundError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
         st.warning(f"Verified test summary is unavailable: {exc}")
 
@@ -333,11 +347,23 @@ def clear_session_evidence() -> int:
     return len(keys)
 
 
+model_pages = {
+    "1. 🔬 Autoencoder": "Reconstruct an image through a compressed representation.",
+    "2. 🎲 Variational Autoencoder": "Compare a reconstruction with samples from its latent distribution.",
+    "3. 🤖 Transformer": "Inspect image attention or analyse a text document.",
+    "4. ⚡ GAN": "Generate synthetic image patches from random noise.",
+    "5. 🌊 Diffusion": "Generate an image from a scenario prompt.",
+}
+
+
+def open_model(destination: str) -> None:
+    st.session_state["navigation"] = destination
+
+
 with st.sidebar:
     st.markdown("""
     <div class="sidebar-brand-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
-            <span class="sidebar-badge">REVIEW 2 · SEMESTER 7</span>
             <span style="font-size:0.68rem;color:#38ef7d;font-weight:750;letter-spacing:0.06em;">● ACTIVE</span>
         </div>
         <h2 class="sidebar-brand-title">🔬 Digital Evidence AI</h2>
@@ -350,15 +376,12 @@ with st.sidebar:
         "Navigate",
         [
             "📊 Project Overview",
-            "1. 🔬 Autoencoder",
-            "2. 🎲 Variational Autoencoder",
-            "3. ⚡ GAN",
-            "4. 🤖 Transformer",
-            "5. 🌊 Diffusion",
+            *model_pages,
             "📈 Model Evaluation",
             "🛡️ Privacy & Ethical AI",
             "ℹ️ Project Information",
         ],
+        key="navigation",
         label_visibility="collapsed",
     )
 
@@ -379,21 +402,23 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown("""<div class="hero"><div class="eyebrow">Multi-model generative AI framework</div><h1>Digital Evidence Analysis and Intelligence Generation</h1><p>Deterministic, probabilistic, and attention-based image reconstruction, trained DCGAN synthetic patch generation, pretrained Diffusion incident simulation, and pretrained Transformer assistance for text and PDF evidence.</p></div>""", unsafe_allow_html=True)
-
-
 if "Project Overview" in page:
-    heading("Project foundation", "A multi-model evidence research framework", "Five core Generative AI model architectures support reconstruction, probabilistic latent representation, adversarial patch synthesis, multimodal Transformer intelligence, and incident scene simulation. The application does not issue forensic verdicts.")
+    st.markdown("""
+    <div class="hero"><h1>Digital Evidence Analysis and Intelligence Generation</h1>
+    <p>Explore image reconstruction, synthetic image generation and document analysis.</p></div>
+    """, unsafe_allow_html=True)
+    st.markdown("### CASIA dataset")
     counts = st.columns(4)
     for column, label, value in zip(counts, ["CASIA images", "Authentic", "Tampered", "Held-out test"], ["12,614", "7,491", "5,123", "1,892"]):
         column.metric(label, value)
-    st.markdown("### The 5 Core Model Families")
-    cards = st.columns(5, gap="medium")
-    cards[0].markdown('<div class="model-card"><span class="tag">01 · Deterministic</span><h3>1. Autoencoder</h3><p>Residual high-fidelity reconstruction through a genuine 6× latent bottleneck.</p></div>', unsafe_allow_html=True)
-    cards[1].markdown('<div class="model-card"><span class="tag">02 · Probabilistic</span><h3>2. Variational AE</h3><p>256-dimensional probabilistic representation with skip-connected reconstruction.</p></div>', unsafe_allow_html=True)
-    cards[2].markdown('<div class="model-card"><span class="tag">03 · Adversarial</span><h3>3. GAN</h3><p>Trained 64×64 CASIA synthetic patch synthesis from random latent noise vectors.</p></div>', unsafe_allow_html=True)
-    cards[3].markdown('<div class="model-card"><span class="tag">04 · Multimodal</span><h3>4. Transformer</h3><p>Unified suite: ViT V2 patch-token attention + FLAN-T5 text/PDF evidence intelligence.</p></div>', unsafe_allow_html=True)
-    cards[4].markdown('<div class="model-card"><span class="tag">05 · Diffusion</span><h3>5. Diffusion</h3><p>Controlled forensic incident scenario generation via Stable Diffusion 1.5.</p></div>', unsafe_allow_html=True)
+    st.markdown("### Explore models")
+    for column, (destination, description) in zip(st.columns(5), model_pages.items()):
+        with column.container(border=True):
+            st.button(
+                destination, on_click=open_model, args=(destination,),
+                width="stretch",
+            )
+            st.caption(description)
     st.markdown("### Analysis workflow")
     st.markdown('<div class="workflow">Upload → RGB preprocessing → reconstruction → MSE · PSNR · SSIM → exploratory interpretation</div>', unsafe_allow_html=True)
     st.markdown('<div class="guardrail"><b>Interpretation boundary:</b> reconstruction error, thresholds, difference maps, and attention are not proof of manipulation and must not be treated as legal or forensic conclusions.</div>', unsafe_allow_html=True)
@@ -404,7 +429,7 @@ if "Project Overview" in page:
 
 
 elif "Autoencoder" in page and "Variational" not in page:
-    heading("Model 01 · deterministic reconstruction", "Quality Autoencoder V1", "Examine high-fidelity deterministic reconstruction from a residual Autoencoder with a genuine 6× latent bottleneck. Metrics compare input and reconstruction; the model does not predict a label.")
+    heading("Model 01 · deterministic reconstruction", "Autoencoder", "Examine high-fidelity deterministic reconstruction from a residual Autoencoder with a genuine 6× latent bottleneck. Metrics compare input and reconstruction; the model does not predict a label.")
     info = st.columns(4)
     for column, label, value in zip(info, ["Input", "Latent", "Compression", "Parameters"], ["3×128×128", "32×16×16", "6×", "2,371,715"]):
         column.metric(label, value)
@@ -441,13 +466,13 @@ elif "Autoencoder" in page and "Variational" not in page:
     with st.expander("Architecture and interpretation"):
         st.write("The residual encoder compresses 49,152 RGB values into an 8,192-value latent tensor. The decoder uses bilinear resize-convolution blocks and Sigmoid output; no encoder-to-decoder skip connection bypasses the bottleneck.")
         st.write("Lower MSE is better; higher PSNR is better; SSIM closer to 1 indicates stronger structural similarity.")
-        st.write("Current checkpoint: epoch 79 selected by validation SSIM 0.942674 · validation MSE 0.00095790.")
-        st.write("Complete held-out test: MSE 0.00094603 · PSNR 31.1951 dB · SSIM 0.938654.")
+        st.write("Current checkpoint: epoch 79 selected by validation SSIM 0.9427 · validation MSE 0.0010.")
+        st.write("Complete held-out test: MSE 0.0009 · PSNR 31.1951 dB · SSIM 0.9387.")
         st.caption("The preserved RTX-80 model used a stronger 24× compression ratio; this quality-focused model trades compression for substantially better reconstruction fidelity.")
 
 
 elif "Variational Autoencoder" in page:
-    heading("Model 02 · probabilistic reconstruction", "Variational Autoencoder V5 Final", "Compare the deterministic posterior mean with genuine image-conditioned samples from the learned 256-dimensional latent distribution.")
+    heading("Model 02 · probabilistic reconstruction", "Variational Autoencoder", "Compare the deterministic posterior mean with genuine image-conditioned samples from the learned 256-dimensional latent distribution.")
     info = st.columns(4)
     for column, label, value in zip(info, ["Input", "Latent", "Parameters", "Checkpoint epoch"], ["3×128×128", "256", "17,599,971", "79"]):
         column.metric(label, value)
@@ -456,7 +481,7 @@ elif "Variational Autoencoder" in page:
     verified_test_cards("vae_v5_final_test_metrics.json", "test_images")
     model_specification(
         [
-            ("Architecture", "Residual VAE V5 with GroupNorm, SiLU, 256-D latent space, and decoder skips"),
+            ("Architecture", "Residual VAE with GroupNorm, SiLU, 256-D latent space, and decoder skips"),
             ("Input", "128×128 RGB image normalized to [0, 1]"),
             ("Processing", "Encoder → μ/log variance → reparameterized z → skip-connected decoder"),
             ("Output", "Deterministic posterior-mean reconstruction and three posterior samples"),
@@ -465,7 +490,7 @@ elif "Variational Autoencoder" in page:
             ("Role", "Probabilistic latent representation and reconstruction; not a tampering verdict"),
         ]
     )
-    model, error = safe_load(load_vae, "VAE V5 Final")
+    model, error = safe_load(load_vae, "Variational Autoencoder")
     if error:
         st.error(error)
     else:
@@ -509,7 +534,7 @@ elif "Variational Autoencoder" in page:
                             )
                             st.caption(
                                 "Mean |pixel delta| from deterministic: "
-                                f"{variation['mean_abs_delta_from_deterministic']:.6f}"
+                                f"{variation['mean_abs_delta_from_deterministic']:.4f}"
                             )
                     st.markdown("#### Difference maps: stochastic variation − deterministic reconstruction")
                     difference_columns = st.columns(3)
@@ -524,7 +549,7 @@ elif "Variational Autoencoder" in page:
                             st.pyplot(figure)
                             plt.close(figure)
                             st.caption(
-                                f"Maximum mean-channel difference: {variation['difference_map_max']:.6f}"
+                                f"Maximum mean-channel difference: {variation['difference_map_max']:.4f}"
                             )
                     st.caption(
                         "Each heatmap uses its own measured color scale so subtle posterior effects remain "
@@ -543,7 +568,7 @@ elif "Variational Autoencoder" in page:
                 except Exception as exc:
                     st.error(f"VAE posterior sampling failed: {exc}")
         with generation_tab:
-            st.info("VAE V5 was optimized with encoder skip features. Random prior samples lack those features and may appear dark or visually degenerate.")
+            st.info("VAE was optimized with encoder skip features. Random prior samples lack those features and may appear dark or visually degenerate.")
             if st.button("Generate experimental latent sample", type="primary"):
                 try:
                     with st.spinner("Sampling z ~ N(0,I)…"):
@@ -553,13 +578,13 @@ elif "Variational Autoencoder" in page:
                 except Exception as exc:
                     st.error(f"VAE generation failed: {exc}")
     with st.expander("Current evaluation context"):
-        st.write("Canonical test: MSE 0.00070007 · PSNR 32.9535 dB · SSIM 0.961139.")
+        st.write("Canonical test: MSE 0.0007 · PSNR 32.9535 dB · SSIM 0.9611.")
         st.write("MSE ROC-AUC 0.5154 indicates almost no useful tampering ranking by reconstruction error alone.")
 
 
 elif "GAN" in page:
     heading(
-        "Model 03 · Adversarial Synthetic Generation",
+        "Model 04 · Adversarial Synthetic Generation",
         "DCGAN — Synthetic Image Generation",
         "Generate synthetic 64×64 CASIA-style image patches from random latent noise vectors using our trained Deep Convolutional GAN. Generated samples are synthetic research artifacts, not genuine digital evidence.",
     )
@@ -884,20 +909,20 @@ elif "GAN" in page:
 
 elif "Transformer" in page:
     heading(
-        "Model 04 · Multimodal Transformer Intelligence",
-        "Transformer Architecture: Vision & Language",
+        "Model 03 · Multimodal Transformer Intelligence",
+        "Transformer",
         "Dual-modality Transformer suite: custom patch-token self-attention for digital evidence image reconstruction and attention analysis, paired with a tokenized Small Language Model (SLM) for text and PDF forensic intelligence.",
     )
 
     t_meta1, t_meta2, t_meta3, t_meta4 = st.columns(4)
-    t_meta1.metric("Vision Transformer", "ViT V2 Autoencoder")
-    t_meta2.metric("ViT Parameters", "2,139,139 (Custom)")
+    t_meta1.metric("Vision Transformer", "ViT Autoencoder")
+    t_meta2.metric("ViT Parameters", "3,591,168 (Custom)")
     t_meta3.metric("Language Model", "FLAN-T5 Small (Pretrained)")
     t_meta4.metric("SLM Parameters", "76,961,152 (Seq2Seq)")
 
-    vit_tab, flan_tab, theory_tab = st.tabs([
-        "👁️ Vision Transformer (ViT V2 — Image Reconstruction)",
+    flan_tab, vit_tab, theory_tab = st.tabs([
         "📄 Text/PDF Evidence Intelligence (FLAN-T5 — Document Analysis)",
+        "👁️ Vision Transformer (ViT — Image Reconstruction)",
         "📐 Architecture & Multimodal Attention Theory",
     ])
 
@@ -925,7 +950,7 @@ elif "Transformer" in page:
                 ("Role", "Patch-relationship reconstruction and attention exploration; not manipulation proof"),
             ]
         )
-        model, error = safe_load(load_transformer, "Transformer V2")
+        model, error = safe_load(load_transformer, "Vision Transformer")
         if error:
             st.error(error)
         else:
@@ -936,12 +961,12 @@ elif "Transformer" in page:
                 try:
                     with st.spinner("Running patch-attention reconstruction…"):
                         original, reconstructed, result, latent, attention = model.reconstruct(image)
-                    compare_images(original, reconstructed, "Transformer V2 reconstruction")
+                    compare_images(original, reconstructed, "Vision Transformer reconstruction")
                     metrics_cards(result)
                     st.markdown("##### Exploratory reconstruction indicator")
                     indicator = st.columns(3)
-                    indicator[0].metric("Reconstruction error", f"{result['reconstruction_error']:.6f}")
-                    indicator[1].metric("Reference threshold", f"{result['anomaly_threshold']:.6f}")
+                    indicator[0].metric("Reconstruction error", f"{result['reconstruction_error']:.4f}")
+                    indicator[1].metric("Reference threshold", f"{result['anomaly_threshold']:.4f}")
                     status = "Above reference range" if result["reconstruction_error"] > result["anomaly_threshold"] else "Within reference range"
                     indicator[2].metric("Indicator", status)
                     st.markdown("##### Patch-attention visualization")
@@ -956,7 +981,7 @@ elif "Transformer" in page:
                 except Exception as exc:
                     st.error(f"Transformer inference failed: {exc}")
         with st.expander("Checkpoint and evaluation context"):
-            st.write("Epoch 50 · final training MSE 0.00256850 · best validation MSE 0.00206004.")
+            st.write("Epoch 50 · final training MSE 0.0026 · best validation MSE 0.0021.")
             st.write("Saved reconstruction-error ROC-AUC 0.5455 indicates limited separation.")
 
     with flan_tab:
@@ -1081,7 +1106,7 @@ elif "Transformer" in page:
         t_comp_cols = st.columns(2, gap="large")
         with t_comp_cols[0]:
             st.info(
-                "**👁️ Vision Transformer (ViT V2)**\n\n"
+                "**👁️ Vision Transformer (ViT)**\n\n"
                 "* **Sequence Element:** 2D spatial patches ($16 \\times 16$ pixels, $N=64$ tokens).\n"
                 "* **Position Representation:** 1D learnable spatial positional embeddings added to patch tokens.\n"
                 "* **Attention Field:** Global bidirectional self-attention across all image patches simultaneously.\n"
@@ -1100,14 +1125,14 @@ elif "Transformer" in page:
 
         st.markdown("##### Multimodal Architecture Comparison")
         theory_df = pd.DataFrame([
-            {"Feature": "Modality", "Vision Transformer (ViT V2)": "Visual RGB (Image patches)", "Evidence Transformer (FLAN-T5)": "Natural Language (Text & PDF)"},
-            {"Feature": "Input Shape", "Vision Transformer (ViT V2)": "3 × 128 × 128 RGB tensor", "Evidence Transformer (FLAN-T5)": "Sequence of subword token IDs (up to 512 tokens/chunk)"},
-            {"Feature": "Token Count", "Vision Transformer (ViT V2)": "64 patch tokens (8 × 8 grid)", "Evidence Transformer (FLAN-T5)": "Dynamic token-aware chunks (up to 2,048 tokens total)"},
-            {"Feature": "Embedding Dimension", "Vision Transformer (ViT V2)": "256", "Evidence Transformer (FLAN-T5)": "512 (d_model)"},
-            {"Feature": "Attention Heads", "Vision Transformer (ViT V2)": "8 heads", "Evidence Transformer (FLAN-T5)": "8 heads"},
-            {"Feature": "Layers", "Vision Transformer (ViT V2)": "4 Encoder layers + 2 Decoder layers", "Evidence Transformer (FLAN-T5)": "6 Encoder blocks + 6 Decoder blocks"},
-            {"Feature": "Total Parameters", "Vision Transformer (ViT V2)": "2,139,139 (Trained by team on CASIA)", "Evidence Transformer (FLAN-T5)": "76,961,152 (Pretrained google/flan-t5-small)"},
-            {"Feature": "Inference Output", "Vision Transformer (ViT V2)": "Reconstructed RGB image + 8×8 attention heatmap", "Evidence Transformer (FLAN-T5)": "Structured intelligence narrative + entity extraction"},
+            {"Feature": "Modality", "Vision Transformer (ViT)": "Visual RGB (Image patches)", "Evidence Transformer (FLAN-T5)": "Natural Language (Text & PDF)"},
+            {"Feature": "Input Shape", "Vision Transformer (ViT)": "3 × 128 × 128 RGB tensor", "Evidence Transformer (FLAN-T5)": "Sequence of subword token IDs (up to 512 tokens/chunk)"},
+            {"Feature": "Token Count", "Vision Transformer (ViT)": "64 patch tokens (8 × 8 grid)", "Evidence Transformer (FLAN-T5)": "Dynamic token-aware chunks (up to 2,048 tokens total)"},
+            {"Feature": "Embedding Dimension", "Vision Transformer (ViT)": "256", "Evidence Transformer (FLAN-T5)": "512 (d_model)"},
+            {"Feature": "Attention Heads", "Vision Transformer (ViT)": "8 heads", "Evidence Transformer (FLAN-T5)": "8 heads"},
+            {"Feature": "Layers", "Vision Transformer (ViT)": "4 Encoder layers + 2 Decoder layers", "Evidence Transformer (FLAN-T5)": "6 Encoder blocks + 6 Decoder blocks"},
+            {"Feature": "Total Parameters", "Vision Transformer (ViT)": "3,591,168 (Trained by team on CASIA)", "Evidence Transformer (FLAN-T5)": "76,961,152 (Pretrained google/flan-t5-small)"},
+            {"Feature": "Inference Output", "Vision Transformer (ViT)": "Reconstructed RGB image + 8×8 attention heatmap", "Evidence Transformer (FLAN-T5)": "Structured intelligence narrative + entity extraction"},
         ])
         st.dataframe(theory_df, hide_index=True, width="stretch")
 
@@ -1406,7 +1431,7 @@ elif "Diffusion" in page:
             * **Checkpoint File:** `checkpoints/Diffusion_UNet.pth` (1,719,273,871 bytes / 1.60 GB; SHA-256: `29ac918c...`).
             * **Audit Finding:** The checkpoint contains **only the pretrained U-Net denoiser** (686 tensors, 859.52M parameters in `torch.float16`). It is an export of `pipe.unet.state_dict()` saved in Cell 14 of the audited notebook.
             * **Scientific Accuracy:** The model was **not custom-trained or fine-tuned**. It is an official pretrained foundation model. All images in the notebook were generated by the Hugging Face pipeline before the `.pth` file was created.
-            * **Contaminated Metrics Resolved:** The notebook's blur-comparison metrics (MSE 0.00106 to 0.00834) tested Gaussian blur on sample stock images and accidentally blurred an output dashboard; they do not measure diffusion generation fidelity or forensic tampering detection.
+            * **Contaminated Metrics Resolved:** The notebook's blur-comparison metrics (MSE 0.0011 to 0.0083) tested Gaussian blur on sample stock images and accidentally blurred an output dashboard; they do not measure diffusion generation fidelity or forensic tampering detection.
             """
         )
         st.markdown("#### Recent Generation Events Audit Log")
@@ -1432,8 +1457,8 @@ elif "Model Evaluation" in page:
     kpi_cols = st.columns(5)
     kpi_cols[0].metric("01 · Autoencoder", "31.20 dB PSNR", "SSIM 0.9387 · 6× Bottleneck")
     kpi_cols[1].metric("02 · Variational AE", "32.95 dB PSNR", "SSIM 0.9611 · 256-D Latent")
-    kpi_cols[2].metric("03 · DCGAN", "169.88 FID", "IS 2.95 ± 0.13 · 30 Epochs")
-    kpi_cols[3].metric("04 · Transformer", "27.27 dB PSNR", "ViT V2 + FLAN-T5 SLM")
+    kpi_cols[3].metric("04 · GAN", "169.88 FID", "IS 2.95 ± 0.13 · 30 Epochs")
+    kpi_cols[2].metric("03 · Transformer", "27.27 dB PSNR", "ViT + FLAN-T5 SLM")
     kpi_cols[4].metric("05 · Diffusion", "1.07B Params", "512×512 LDM · CFG 7.5")
 
     eval_tab_master, eval_tab_rec, eval_tab_gen, eval_tab_multi, eval_tab_roc = st.tabs([
@@ -1452,27 +1477,37 @@ elif "Model Evaluation" in page:
 
         master_df = pd.DataFrame([
             {
-                "Model Architecture": "1. Quality Autoencoder V1",
+                "Model Architecture": "1. Autoencoder",
                 "Primary Input": "128×128 RGB Image",
                 "Paradigm": "Deterministic Bottleneck (6× compression)",
                 "Evaluated Benchmark": "1,892 CASIA Held-Out Test Images",
-                "Key Evaluation Metrics": "PSNR: 31.20 dB · SSIM: 0.9387 · MSE: 0.00095",
+                "Key Evaluation Metrics": "PSNR: 31.20 dB · SSIM: 0.9387 · MSE: 0.0009",
                 "Parameters": "2,371,715",
                 "Inference Latency": "12–25 ms",
                 "Primary Forensic Role": "Deterministic compression & high-fidelity baseline reconstruction",
             },
             {
-                "Model Architecture": "2. Variational Autoencoder (VAE V5 Final)",
+                "Model Architecture": "2. Variational Autoencoder",
                 "Primary Input": "128×128 RGB Image",
                 "Paradigm": "Probabilistic Latent Sampling (z ~ N(μ, σ²))",
                 "Evaluated Benchmark": "1,892 CASIA Held-Out Test Images",
-                "Key Evaluation Metrics": "PSNR: 32.95 dB · SSIM: 0.9611 · MSE: 0.00070",
+                "Key Evaluation Metrics": "PSNR: 32.95 dB · SSIM: 0.9611 · MSE: 0.0007",
                 "Parameters": "17,599,971",
                 "Inference Latency": "18–35 ms",
                 "Primary Forensic Role": "Probabilistic latent representation & stochastic uncertainty sampling",
             },
             {
-                "Model Architecture": "3. DCGAN Generator (Ours)",
+                "Model Architecture": "3. Transformer",
+                "Primary Input": "128×128 RGB Image + Text/PDF Documents",
+                "Paradigm": "Scaled Dot-Product Self-Attention + Seq2Seq",
+                "Evaluated Benchmark": "1,892 CASIA Images + Forensic Case Records",
+                "Key Evaluation Metrics": "ViT PSNR: 27.27 dB | SSIM: 0.8449 | SLM: 5.4s CPU",
+                "Parameters": "3,591,168 (ViT) + 76,961,152 (FLAN-T5)",
+                "Inference Latency": "20 ms (ViT) / 5.4 s (SLM)",
+                "Primary Forensic Role": "Patch-token self-attention & evidence text intelligence extraction",
+            },
+            {
+                "Model Architecture": "4. Generative Adversarial Network",
                 "Primary Input": "100-D Gaussian Noise z",
                 "Paradigm": "Adversarial Minimax (Transposed Convolutions)",
                 "Evaluated Benchmark": "1,892 CASIA Test vs. 1,892 Synthetic Images",
@@ -1480,16 +1515,6 @@ elif "Model Evaluation" in page:
                 "Parameters": "3,576,704 (G) / 2,765,568 (D)",
                 "Inference Latency": "10–40 ms (instantaneous)",
                 "Primary Forensic Role": "Adversarial synthetic patch generation & latent space interpolation",
-            },
-            {
-                "Model Architecture": "4. Multimodal Transformer Suite",
-                "Primary Input": "128×128 RGB Image + Text/PDF Documents",
-                "Paradigm": "Scaled Dot-Product Self-Attention + Seq2Seq",
-                "Evaluated Benchmark": "1,892 CASIA Images + Forensic Case Records",
-                "Key Evaluation Metrics": "ViT PSNR: 27.27 dB | SSIM: 0.8449 | SLM: 5.4s CPU",
-                "Parameters": "2,139,139 (ViT) + 76,961,152 (FLAN-T5)",
-                "Inference Latency": "20 ms (ViT) / 5.4 s (SLM)",
-                "Primary Forensic Role": "Patch-token self-attention & evidence text intelligence extraction",
             },
             {
                 "Model Architecture": "5. Latent Diffusion (Stable Diffusion 1.5)",
@@ -1508,10 +1533,10 @@ elif "Model Evaluation" in page:
         roles1 = st.columns(3, gap="medium")
         roles1[0].success("**01 · Autoencoder (AE)**\n\nDeterministic compression and high-fidelity baseline reconstruction.")
         roles1[1].info("**02 · Variational AE (VAE)**\n\nProbabilistic latent representation and image-conditioned stochastic sampling.")
-        roles1[2].warning("**03 · DCGAN Generator**\n\nAdversarial synthetic patch generation from random latent noise vectors.")
+        roles1[2].info("**03 · Transformer**\n\nDual-modality: ViT patch self-attention reconstruction + FLAN-T5 text/PDF document intelligence.")
 
         roles2 = st.columns(2, gap="medium")
-        roles2[0].info("**04 · Transformer Suite (ViT + SLM)**\n\nDual-modality: ViT patch self-attention reconstruction + FLAN-T5 text/PDF document intelligence.")
+        roles2[0].warning("**04 · GAN**\n\nAdversarial synthetic patch generation from random latent noise vectors.")
         roles2[1].success("**05 · Latent Diffusion (SD 1.5)**\n\nControlled forensic incident scenario generation and benchmark stress simulation.")
 
     with eval_tab_rec:
@@ -1530,13 +1555,13 @@ elif "Model Evaluation" in page:
 
         st.markdown("##### Architectural Trade-Off Analysis")
         st.write(
-            "- **Quality Autoencoder V1:** Achieves strong reconstruction fidelity (PSNR 31.20 dB, SSIM 0.9387) by preserving spatial topology through a 6× bottleneck (32×16×16) without skip bypasses."
+            "- **Autoencoder:** Achieves strong reconstruction fidelity (PSNR 31.20 dB, SSIM 0.9387) by preserving spatial topology through a 6× bottleneck (32×16×16) without skip bypasses."
         )
         st.write(
-            "- **VAE V5 Final:** Outperforms all image models on PSNR (32.95 dB) and SSIM (0.9611) due to feature-preserving decoder skip connections, while enabling probabilistic sampling."
+            "- **Variational Autoencoder:** Outperforms all image models on PSNR (32.95 dB) and SSIM (0.9611) due to feature-preserving decoder skip connections, while enabling probabilistic sampling."
         )
         st.write(
-            "- **Vision Transformer V2:** Splits the image into 64 patch tokens (16×16 pixels) with 8 attention heads. It trades pure pixel MSE (0.002207) for global self-attention modeling and spatial interpretability."
+            "- **Vision Transformer:** Splits the image into 64 patch tokens (16×16 pixels) with 8 attention heads. It trades pure pixel MSE (0.0022) for global self-attention modeling and spatial interpretability."
         )
 
     with eval_tab_gen:
@@ -1582,10 +1607,10 @@ elif "Model Evaluation" in page:
         st.caption("Quantitative performance metrics for our dual-modality Transformer implementations:")
         multi_eval_df = pd.DataFrame([
             {
-                "Module": "Vision Transformer (ViT V2)",
+                "Module": "Vision Transformer (ViT)",
                 "Modality": "Visual RGB (Image patches)",
                 "Sequence Architecture": "64 patch tokens (16×16 pixels), 256-D embedding, 8 heads",
-                "Evaluated Performance": "MSE: 0.002207 · PSNR: 27.27 dB · SSIM: 0.8449",
+                "Evaluated Performance": "MSE: 0.0022 · PSNR: 27.27 dB · SSIM: 0.8449",
                 "Inference Latency": "20–45 ms (CPU/GPU)",
                 "Evaluation Scope": "1,892 canonical held-out test images",
             },
@@ -1605,19 +1630,19 @@ elif "Model Evaluation" in page:
         st.caption("ROC-AUC evaluation on the canonical test split (authentic vs. tampered images):")
         roc_df = pd.DataFrame([
             {
-                "Model": "Quality Autoencoder V1",
+                "Model": "Autoencoder",
                 "Evaluated Metric": "Reconstruction MSE",
                 "ROC-AUC": "~0.50 (0.498)",
                 "Scientific Interpretation": "Random ranking. Reconstruction fidelity does not separate authentic from tampered images.",
             },
             {
-                "Model": "Variational Autoencoder (VAE V5)",
+                "Model": "Variational Autoencoder",
                 "Evaluated Metric": "Posterior Mean MSE",
                 "ROC-AUC": "0.5154",
                 "Scientific Interpretation": "Negligible separation. High-fidelity VAE reconstructs spliced and authentic regions equally well.",
             },
             {
-                "Model": "Vision Transformer V2",
+                "Model": "Vision Transformer",
                 "Evaluated Metric": "Patch Reconstruction MSE",
                 "ROC-AUC": "0.5455",
                 "Scientific Interpretation": "Marginal statistical separation; insufficient for forensic classification or verdict issuance.",
@@ -1688,9 +1713,9 @@ elif "Privacy" in page:
 
 else:
     heading(
-        "Review-2 implementation",
+        "Digital Evidence AI",
         "Project Information",
-        "A reproducible academic prototype built for Semester 7 Generative AI review and live faculty demonstration.",
+        "Generative models for image reconstruction, synthetic image generation and document analysis.",
     )
     details = st.columns(3)
     details[0].metric("Integrated model families", "5")
@@ -1698,8 +1723,8 @@ else:
     details[2].metric("Demo samples", "24")
     st.markdown("### Implemented scope")
     st.write(
-        "Five operational model architectures: (1) Quality Autoencoder V1, (2) VAE V5 Final, (3) DCGAN "
-        "Synthetic Patch Generator, (4) Multimodal Transformer Suite (ViT V2 + FLAN-T5 Small), and "
+        "Five operational model architectures: (1) Autoencoder, (2) Variational Autoencoder, (3) Transformer (ViT and FLAN-T5), "
+        "(4) Generative Adversarial Network, and "
         "(5) pretrained Stable Diffusion 1.5 Synthetic Scenario Generator."
     )
     st.markdown("### Current boundaries")
